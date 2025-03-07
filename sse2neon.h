@@ -273,22 +273,23 @@ typedef int64x2_t __m128i; /* 128-bit vector containing integers */
 // individual components.  The use of this union should be hidden behind a macro
 // that is used throughout the codebase to access the members instead of always
 // declaring this type of variable.
-typedef union ALIGN_STRUCT(16) SIMDVec {
-    float m128_f32[4];     // as floats - DON'T USE. Added for convenience.
-    int8_t m128_i8[16];    // as signed 8-bit integers.
-    int16_t m128_i16[8];   // as signed 16-bit integers.
-    int32_t m128_i32[4];   // as signed 32-bit integers.
-    int64_t m128_i64[2];   // as signed 64-bit integers.
-    uint8_t m128_u8[16];   // as unsigned 8-bit integers.
-    uint16_t m128_u16[8];  // as unsigned 16-bit integers.
-    uint32_t m128_u32[4];  // as unsigned 32-bit integers.
-    uint64_t m128_u64[2];  // as unsigned 64-bit integers.
+typedef union ALIGN_STRUCT(16) SIMDVec
+{
+    float m128_f32[4];    // as floats - DON'T USE. Added for convenience.
+    int8_t m128_i8[16];   // as signed 8-bit integers.
+    int16_t m128_i16[8];  // as signed 16-bit integers.
+    int32_t m128_i32[4];  // as signed 32-bit integers.
+    int64_t m128_i64[2];  // as signed 64-bit integers.
+    uint8_t m128_u8[16];  // as unsigned 8-bit integers.
+    uint16_t m128_u16[8]; // as unsigned 16-bit integers.
+    uint32_t m128_u32[4]; // as unsigned 32-bit integers.
+    uint64_t m128_u64[2]; // as unsigned 64-bit integers.
 } SIMDVec;
 
 // casting using SIMDVec
-#define vreinterpretq_nth_u64_m128i(x, n) (((SIMDVec *) &x)->m128_u64[n])
-#define vreinterpretq_nth_u32_m128i(x, n) (((SIMDVec *) &x)->m128_u32[n])
-#define vreinterpretq_nth_u8_m128i(x, n) (((SIMDVec *) &x)->m128_u8[n])
+#define vreinterpretq_nth_u64_m128i(x, n) (((SIMDVec *)&x)->m128_u64[n])
+#define vreinterpretq_nth_u32_m128i(x, n) (((SIMDVec *)&x)->m128_u32[n])
+#define vreinterpretq_nth_u8_m128i(x, n) (((SIMDVec *)&x)->m128_u8[n])
 
 /* Backwards compatibility for compilers with lack of specific type support */
 
@@ -387,7 +388,8 @@ FORCE_INLINE uint8x16x4_t vld1q_u8_x4(const uint8_t *p)
 /* Set/get methods */
 
 /* Constants for use with _mm_prefetch.  */
-enum _mm_hint {
+enum _mm_hint
+{
     _MM_HINT_NTA = 0,  /* load data to L1 and L2 cache, mark it as NTA */
     _MM_HINT_T0 = 1,   /* load data to L1 and L2 cache */
     _MM_HINT_T1 = 2,   /* load data to L2 cache only */
@@ -402,7 +404,7 @@ enum _mm_hint {
 // processor. https://msdn.microsoft.com/en-us/library/84szxsww(v=vs.100).aspx
 FORCE_INLINE void _mm_prefetch(const void *p, int i)
 {
-    (void) i;
+    (void)i;
     __builtin_prefetch(p);
 }
 
@@ -487,7 +489,7 @@ FORCE_INLINE __m128i _mm_setr_epi16(short w0,
                                     short w7)
 {
     int16_t ALIGN_STRUCT(16) data[8] = {w0, w1, w2, w3, w4, w5, w6, w7};
-    return vreinterpretq_m128i_s16(vld1q_s16((int16_t *) data));
+    return vreinterpretq_m128i_s16(vld1q_s16((int16_t *)data));
 }
 
 // Sets the 4 signed 32-bit integer values in reverse order
@@ -551,11 +553,11 @@ FORCE_INLINE __m128i _mm_set_epi8(signed char b15,
                                   signed char b0)
 {
     int8_t ALIGN_STRUCT(16)
-        data[16] = {(int8_t) b0,  (int8_t) b1,  (int8_t) b2,  (int8_t) b3,
-                    (int8_t) b4,  (int8_t) b5,  (int8_t) b6,  (int8_t) b7,
-                    (int8_t) b8,  (int8_t) b9,  (int8_t) b10, (int8_t) b11,
-                    (int8_t) b12, (int8_t) b13, (int8_t) b14, (int8_t) b15};
-    return (__m128i) vld1q_s8(data);
+        data[16] = {(int8_t)b0, (int8_t)b1, (int8_t)b2, (int8_t)b3,
+                    (int8_t)b4, (int8_t)b5, (int8_t)b6, (int8_t)b7,
+                    (int8_t)b8, (int8_t)b9, (int8_t)b10, (int8_t)b11,
+                    (int8_t)b12, (int8_t)b13, (int8_t)b14, (int8_t)b15};
+    return (__m128i)vld1q_s8(data);
 }
 
 // Sets the 8 signed 16-bit integer values.
@@ -593,11 +595,11 @@ FORCE_INLINE __m128i _mm_setr_epi8(signed char b0,
                                    signed char b15)
 {
     int8_t ALIGN_STRUCT(16)
-        data[16] = {(int8_t) b0,  (int8_t) b1,  (int8_t) b2,  (int8_t) b3,
-                    (int8_t) b4,  (int8_t) b5,  (int8_t) b6,  (int8_t) b7,
-                    (int8_t) b8,  (int8_t) b9,  (int8_t) b10, (int8_t) b11,
-                    (int8_t) b12, (int8_t) b13, (int8_t) b14, (int8_t) b15};
-    return (__m128i) vld1q_s8(data);
+        data[16] = {(int8_t)b0, (int8_t)b1, (int8_t)b2, (int8_t)b3,
+                    (int8_t)b4, (int8_t)b5, (int8_t)b6, (int8_t)b7,
+                    (int8_t)b8, (int8_t)b9, (int8_t)b10, (int8_t)b11,
+                    (int8_t)b12, (int8_t)b13, (int8_t)b14, (int8_t)b15};
+    return (__m128i)vld1q_s8(data);
 }
 
 // Sets the 4 signed 32-bit integer values to i.
@@ -649,7 +651,7 @@ FORCE_INLINE __m128i _mm_set_epi64x(int64_t i1, int64_t i2)
 // https://msdn.microsoft.com/en-us/library/dk2sdw0h(v=vs.120).aspx
 FORCE_INLINE __m128i _mm_set_epi64(__m64 i1, __m64 i2)
 {
-    return _mm_set_epi64x((int64_t) i1, (int64_t) i2);
+    return _mm_set_epi64x((int64_t)i1, (int64_t)i2);
 }
 
 // Set packed double-precision (64-bit) floating-point elements in dst with the
@@ -659,9 +661,9 @@ FORCE_INLINE __m128d _mm_set_pd(double e1, double e0)
 {
     double ALIGN_STRUCT(16) data[2] = {e0, e1};
 #if defined(__aarch64__)
-    return vreinterpretq_m128d_f64(vld1q_f64((float64_t *) data));
+    return vreinterpretq_m128d_f64(vld1q_f64((float64_t *)data));
 #else
-    return vreinterpretq_m128d_f32(vld1q_f32((float32_t *) data));
+    return vreinterpretq_m128d_f32(vld1q_f32((float32_t *)data));
 #endif
 }
 
@@ -683,14 +685,14 @@ FORCE_INLINE void _mm_storeu_ps(float *p, __m128 a)
 // https://msdn.microsoft.com/en-us/library/vstudio/edk11s13(v=vs.100).aspx
 FORCE_INLINE void _mm_store_si128(__m128i *p, __m128i a)
 {
-    vst1q_s32((int32_t *) p, vreinterpretq_s32_m128i(a));
+    vst1q_s32((int32_t *)p, vreinterpretq_s32_m128i(a));
 }
 
 // Stores four 32-bit integer values as (as a __m128i value) at the address p.
 // https://msdn.microsoft.com/en-us/library/vstudio/edk11s13(v=vs.100).aspx
 FORCE_INLINE void _mm_storeu_si128(__m128i *p, __m128i a)
 {
-    vst1q_s32((int32_t *) p, vreinterpretq_s32_m128i(a));
+    vst1q_s32((int32_t *)p, vreinterpretq_s32_m128i(a));
 }
 
 // Stores the lower single - precision, floating - point value.
@@ -707,9 +709,9 @@ FORCE_INLINE void _mm_store_ss(float *p, __m128 a)
 FORCE_INLINE void _mm_store_pd(double *mem_addr, __m128d a)
 {
 #if defined(__aarch64__)
-    vst1q_f64((float64_t *) mem_addr, vreinterpretq_f64_m128d(a));
+    vst1q_f64((float64_t *)mem_addr, vreinterpretq_f64_m128d(a));
 #else
-    vst1q_f32((float32_t *) mem_addr, vreinterpretq_f32_m128d(a));
+    vst1q_f32((float32_t *)mem_addr, vreinterpretq_f32_m128d(a));
 #endif
 }
 
@@ -778,7 +780,7 @@ FORCE_INLINE __m128 _mm_load1_ps(const float *p)
 FORCE_INLINE __m128 _mm_loadl_pi(__m128 a, __m64 const *p)
 {
     return vreinterpretq_m128_f32(
-        vcombine_f32(vld1_f32((const float32_t *) p), vget_high_f32(a)));
+        vcombine_f32(vld1_f32((const float32_t *)p), vget_high_f32(a)));
 }
 
 // Sets the upper two single-precision, floating-point values with 64
@@ -794,7 +796,7 @@ FORCE_INLINE __m128 _mm_loadl_pi(__m128 a, __m64 const *p)
 FORCE_INLINE __m128 _mm_loadh_pi(__m128 a, __m64 const *p)
 {
     return vreinterpretq_m128_f32(
-        vcombine_f32(vget_low_f32(a), vld1_f32((const float32_t *) p)));
+        vcombine_f32(vget_low_f32(a), vld1_f32((const float32_t *)p)));
 }
 
 // Loads four single-precision, floating-point values.
@@ -822,7 +824,7 @@ FORCE_INLINE __m128d _mm_load_sd(const double *p)
 #if defined(__aarch64__)
     return vsetq_lane_f64(*p, vdupq_n_f64(0), 0);
 #else
-    const float *fp = (const float *) p;
+    const float *fp = (const float *)p;
     float ALIGN_STRUCT(16) data[4] = {fp[0], fp[1], 0, 0};
     return vld1q_f32(data);
 #endif
@@ -836,7 +838,7 @@ FORCE_INLINE __m128d _mm_load_pd(const double *p)
 #if defined(__aarch64__)
     return (__m128d)(vld1q_f64(p));
 #else
-    const float *fp = (const float *) p;
+    const float *fp = (const float *)p;
     float ALIGN_STRUCT(16) data[4] = {fp[0], fp[1], fp[2], fp[3]};
     return vld1q_f32(data);
 #endif
@@ -867,7 +869,7 @@ FORCE_INLINE __m128i _mm_loadl_epi64(__m128i const *p)
      * lower 64 bits of the result, zeroing the upper 64 bits of the result.
      */
     return vreinterpretq_m128i_s32(
-        vcombine_s32(vld1_s32((int32_t const *) p), vcreate_s32(0)));
+        vcombine_s32(vld1_s32((int32_t const *)p), vcreate_s32(0)));
 }
 
 // Sets the low word to the single-precision, floating-point value of b
@@ -902,7 +904,7 @@ FORCE_INLINE __m128 _mm_andnot_ps(__m128 a, __m128 b)
 {
     return vreinterpretq_m128_s32(
         vbicq_s32(vreinterpretq_s32_m128(b),
-                  vreinterpretq_s32_m128(a)));  // *NOTE* argument swap
+                  vreinterpretq_s32_m128(a))); // *NOTE* argument swap
 }
 
 // Compute the bitwise NOT of packed double-precision (64-bit) floating-point
@@ -931,7 +933,7 @@ FORCE_INLINE __m128i _mm_andnot_si128(__m128i a, __m128i b)
 {
     return vreinterpretq_m128i_s32(
         vbicq_s32(vreinterpretq_s32_m128i(b),
-                  vreinterpretq_s32_m128i(a)));  // *NOTE* argument swap
+                  vreinterpretq_s32_m128i(a))); // *NOTE* argument swap
 }
 
 // Computes the bitwise AND of the 128-bit value in a and the 128-bit value in
@@ -1249,11 +1251,12 @@ FORCE_INLINE __m128 _mm_shuffle_ps_2032(__m128 a, __m128 b)
             (((imm) >> 4) & 0x3) + 4, (((imm) >> 6) & 0x3) + 4); \
         vreinterpretq_m128_f32(_shuf);                           \
     })
-#else  // generic
+#else // generic
 #define _mm_shuffle_ps(a, b, imm)                          \
     __extension__({                                        \
         __m128 ret;                                        \
-        switch (imm) {                                     \
+        switch (imm)                                       \
+        {                                                  \
         case _MM_SHUFFLE(1, 0, 3, 2):                      \
             ret = _mm_shuffle_ps_1032((a), (b));           \
             break;                                         \
@@ -1400,10 +1403,10 @@ FORCE_INLINE __m128i _mm_shuffle_epi_3332(__m128i a)
 // https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm_shuffle_epi8
 FORCE_INLINE __m128i _mm_shuffle_epi8(__m128i a, __m128i b)
 {
-    int8x16_t tbl = vreinterpretq_s8_m128i(a);   // input a
-    uint8x16_t idx = vreinterpretq_u8_m128i(b);  // input b
+    int8x16_t tbl = vreinterpretq_s8_m128i(a);  // input a
+    uint8x16_t idx = vreinterpretq_u8_m128i(b); // input b
     uint8x16_t idx_masked =
-        vandq_u8(idx, vdupq_n_u8(0x8F));  // avoid using meaningless bits
+        vandq_u8(idx, vdupq_n_u8(0x8F)); // avoid using meaningless bits
 #if defined(__aarch64__)
     return vreinterpretq_m128i_s8(vqtbl1q_s8(tbl, idx_masked));
 #elif defined(__GNUC__)
@@ -1479,11 +1482,12 @@ FORCE_INLINE __m128i _mm_shuffle_epi8(__m128i a, __m128i b)
             ((imm) >> 4) & 0x3, ((imm) >> 6) & 0x3);           \
         vreinterpretq_m128i_s32(_shuf);                        \
     })
-#else  // generic
+#else // generic
 #define _mm_shuffle_epi32(a, imm)                        \
     __extension__({                                      \
         __m128i ret;                                     \
-        switch (imm) {                                   \
+        switch (imm)                                     \
+        {                                                \
         case _MM_SHUFFLE(1, 0, 3, 2):                    \
             ret = _mm_shuffle_epi_1032((a));             \
             break;                                       \
@@ -1565,7 +1569,7 @@ FORCE_INLINE __m128i _mm_shuffle_epi8(__m128i a, __m128i b)
             (((imm) >> 4) & 0x3), (((imm) >> 6) & 0x3), 4, 5, 6, 7); \
         vreinterpretq_m128i_s16(_shuf);                              \
     })
-#else  // generic
+#else // generic
 #define _mm_shufflelo_epi16(a, imm) _mm_shufflelo_epi16_function((a), (imm))
 #endif
 
@@ -1601,7 +1605,7 @@ FORCE_INLINE __m128i _mm_shuffle_epi8(__m128i a, __m128i b)
             (((imm) >> 6) & 0x3) + 4);                          \
         vreinterpretq_m128i_s16(_shuf);                         \
     })
-#else  // generic
+#else // generic
 #define _mm_shufflehi_epi16(a, imm) _mm_shufflehi_epi16_function((a), (imm))
 #endif
 
@@ -1657,14 +1661,13 @@ FORCE_INLINE __m128i _mm_blendv_epi8(__m128i _a, __m128i _b, __m128i _mask)
 
 /* Shifts */
 
-
 // Shift packed 16-bit integers in a right by imm while shifting in sign
 // bits, and store the results in dst.
 // https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm_srai_epi16
 FORCE_INLINE __m128i _mm_srai_epi16(__m128i a, int imm)
 {
     const int count = (imm & ~15) ? 15 : imm;
-    return (__m128i) vshlq_s16((int16x8_t) a, vdupq_n_s16(-count));
+    return (__m128i)vshlq_s16((int16x8_t)a, vdupq_n_s16(-count));
 }
 
 // Shifts the 8 signed or unsigned 16-bit integers in a left by count bits while
@@ -1679,11 +1682,16 @@ FORCE_INLINE __m128i _mm_srai_epi16(__m128i a, int imm)
 #define _mm_slli_epi16(a, imm)                                   \
     __extension__({                                              \
         __m128i ret;                                             \
-        if ((imm) <= 0) {                                        \
+        if ((imm) <= 0)                                          \
+        {                                                        \
             ret = a;                                             \
-        } else if ((imm) > 15) {                                 \
+        }                                                        \
+        else if ((imm) > 15)                                     \
+        {                                                        \
             ret = _mm_setzero_si128();                           \
-        } else {                                                 \
+        }                                                        \
+        else                                                     \
+        {                                                        \
             ret = vreinterpretq_m128i_s16(                       \
                 vshlq_n_s16(vreinterpretq_s16_m128i(a), (imm))); \
         }                                                        \
@@ -1697,11 +1705,16 @@ FORCE_INLINE __m128i _mm_srai_epi16(__m128i a, int imm)
 #define _mm_slli_epi32(a, imm)                                   \
     __extension__({                                              \
         __m128i ret;                                             \
-        if ((imm) <= 0) {                                        \
+        if ((imm) <= 0)                                          \
+        {                                                        \
             ret = a;                                             \
-        } else if ((imm) > 31) {                                 \
+        }                                                        \
+        else if ((imm) > 31)                                     \
+        {                                                        \
             ret = _mm_setzero_si128();                           \
-        } else {                                                 \
+        }                                                        \
+        else                                                     \
+        {                                                        \
             ret = vreinterpretq_m128i_s32(                       \
                 vshlq_n_s32(vreinterpretq_s32_m128i(a), (imm))); \
         }                                                        \
@@ -1713,11 +1726,16 @@ FORCE_INLINE __m128i _mm_srai_epi16(__m128i a, int imm)
 #define _mm_slli_epi64(a, imm)                                   \
     __extension__({                                              \
         __m128i ret;                                             \
-        if ((imm) <= 0) {                                        \
+        if ((imm) <= 0)                                          \
+        {                                                        \
             ret = a;                                             \
-        } else if ((imm) > 63) {                                 \
+        }                                                        \
+        else if ((imm) > 63)                                     \
+        {                                                        \
             ret = _mm_setzero_si128();                           \
-        } else {                                                 \
+        }                                                        \
+        else                                                     \
+        {                                                        \
             ret = vreinterpretq_m128i_s64(                       \
                 vshlq_n_s64(vreinterpretq_s64_m128i(a), (imm))); \
         }                                                        \
@@ -1736,11 +1754,16 @@ FORCE_INLINE __m128i _mm_srai_epi16(__m128i a, int imm)
 #define _mm_srli_epi16(a, imm)                                   \
     __extension__({                                              \
         __m128i ret;                                             \
-        if ((imm) <= 0) {                                        \
+        if ((imm) <= 0)                                          \
+        {                                                        \
             ret = a;                                             \
-        } else if ((imm) > 31) {                                 \
+        }                                                        \
+        else if ((imm) > 31)                                     \
+        {                                                        \
             ret = _mm_setzero_si128();                           \
-        } else {                                                 \
+        }                                                        \
+        else                                                     \
+        {                                                        \
             ret = vreinterpretq_m128i_u16(                       \
                 vshrq_n_u16(vreinterpretq_u16_m128i(a), (imm))); \
         }                                                        \
@@ -1754,11 +1777,16 @@ FORCE_INLINE __m128i _mm_srai_epi16(__m128i a, int imm)
 #define _mm_srli_epi32(a, imm)                                   \
     __extension__({                                              \
         __m128i ret;                                             \
-        if ((imm) <= 0) {                                        \
+        if ((imm) <= 0)                                          \
+        {                                                        \
             ret = a;                                             \
-        } else if ((imm) > 31) {                                 \
+        }                                                        \
+        else if ((imm) > 31)                                     \
+        {                                                        \
             ret = _mm_setzero_si128();                           \
-        } else {                                                 \
+        }                                                        \
+        else                                                     \
+        {                                                        \
             ret = vreinterpretq_m128i_u32(                       \
                 vshrq_n_u32(vreinterpretq_u32_m128i(a), (imm))); \
         }                                                        \
@@ -1770,11 +1798,16 @@ FORCE_INLINE __m128i _mm_srai_epi16(__m128i a, int imm)
 #define _mm_srli_epi64(a, imm)                                   \
     __extension__({                                              \
         __m128i ret;                                             \
-        if ((imm) <= 0) {                                        \
+        if ((imm) <= 0)                                          \
+        {                                                        \
             ret = a;                                             \
-        } else if ((imm) > 63) {                                 \
+        }                                                        \
+        else if ((imm) > 63)                                     \
+        {                                                        \
             ret = _mm_setzero_si128();                           \
-        } else {                                                 \
+        }                                                        \
+        else                                                     \
+        {                                                        \
             ret = vreinterpretq_m128i_u64(                       \
                 vshrq_n_u64(vreinterpretq_u64_m128i(a), (imm))); \
         }                                                        \
@@ -1788,14 +1821,19 @@ FORCE_INLINE __m128i _mm_srai_epi16(__m128i a, int imm)
 #define _mm_srai_epi32(a, imm)                                   \
     __extension__({                                              \
         __m128i ret;                                             \
-        if ((imm) <= 0) {                                        \
+        if ((imm) <= 0)                                          \
+        {                                                        \
             ret = a;                                             \
-        } else if ((imm) > 31) {                                 \
+        }                                                        \
+        else if ((imm) > 31)                                     \
+        {                                                        \
             ret = vreinterpretq_m128i_s32(                       \
                 vshrq_n_s32(vreinterpretq_s32_m128i(a), 16));    \
             ret = vreinterpretq_m128i_s32(                       \
                 vshrq_n_s32(vreinterpretq_s32_m128i(ret), 16));  \
-        } else {                                                 \
+        }                                                        \
+        else                                                     \
+        {                                                        \
             ret = vreinterpretq_m128i_s32(                       \
                 vshrq_n_s32(vreinterpretq_s32_m128i(a), (imm))); \
         }                                                        \
@@ -1812,11 +1850,16 @@ FORCE_INLINE __m128i _mm_srai_epi16(__m128i a, int imm)
 #define _mm_srli_si128(a, imm)                                              \
     __extension__({                                                         \
         __m128i ret;                                                        \
-        if ((imm) <= 0) {                                                   \
+        if ((imm) <= 0)                                                     \
+        {                                                                   \
             ret = a;                                                        \
-        } else if ((imm) > 15) {                                            \
+        }                                                                   \
+        else if ((imm) > 15)                                                \
+        {                                                                   \
             ret = _mm_setzero_si128();                                      \
-        } else {                                                            \
+        }                                                                   \
+        else                                                                \
+        {                                                                   \
             ret = vreinterpretq_m128i_s8(                                   \
                 vextq_s8(vreinterpretq_s8_m128i(a), vdupq_n_s8(0), (imm))); \
         }                                                                   \
@@ -1833,11 +1876,16 @@ FORCE_INLINE __m128i _mm_srai_epi16(__m128i a, int imm)
 #define _mm_slli_si128(a, imm)                                          \
     __extension__({                                                     \
         __m128i ret;                                                    \
-        if ((imm) <= 0) {                                               \
+        if ((imm) <= 0)                                                 \
+        {                                                               \
             ret = a;                                                    \
-        } else if ((imm) > 15) {                                        \
+        }                                                               \
+        else if ((imm) > 15)                                            \
+        {                                                               \
             ret = _mm_setzero_si128();                                  \
-        } else {                                                        \
+        }                                                               \
+        else                                                            \
+        {                                                               \
             ret = vreinterpretq_m128i_s8(vextq_s8(                      \
                 vdupq_n_s8(0), vreinterpretq_s8_m128i(a), 16 - (imm))); \
         }                                                               \
@@ -1859,7 +1907,7 @@ FORCE_INLINE __m128i _mm_sll_epi16(__m128i a, __m128i count)
     if (c > 15)
         return _mm_setzero_si128();
 
-    int16x8_t vc = vdupq_n_s16((int16_t) c);
+    int16x8_t vc = vdupq_n_s16((int16_t)c);
     return vreinterpretq_m128i_s16(vshlq_s16(vreinterpretq_s16_m128i(a), vc));
 }
 
@@ -1878,7 +1926,7 @@ FORCE_INLINE __m128i _mm_sll_epi32(__m128i a, __m128i count)
     if (c > 31)
         return _mm_setzero_si128();
 
-    int32x4_t vc = vdupq_n_s32((int32_t) c);
+    int32x4_t vc = vdupq_n_s32((int32_t)c);
     return vreinterpretq_m128i_s32(vshlq_s32(vreinterpretq_s32_m128i(a), vc));
 }
 
@@ -1895,7 +1943,7 @@ FORCE_INLINE __m128i _mm_sll_epi64(__m128i a, __m128i count)
     if (c > 63)
         return _mm_setzero_si128();
 
-    int64x2_t vc = vdupq_n_s64((int64_t) c);
+    int64x2_t vc = vdupq_n_s64((int64_t)c);
     return vreinterpretq_m128i_s64(vshlq_s64(vreinterpretq_s64_m128i(a), vc));
 }
 
@@ -1914,7 +1962,7 @@ FORCE_INLINE __m128i _mm_srl_epi16(__m128i a, __m128i count)
     if (c > 15)
         return _mm_setzero_si128();
 
-    int16x8_t vc = vdupq_n_s16(-(int16_t) c);
+    int16x8_t vc = vdupq_n_s16(-(int16_t)c);
     return vreinterpretq_m128i_u16(vshlq_u16(vreinterpretq_u16_m128i(a), vc));
 }
 
@@ -1933,7 +1981,7 @@ FORCE_INLINE __m128i _mm_srl_epi32(__m128i a, __m128i count)
     if (c > 31)
         return _mm_setzero_si128();
 
-    int32x4_t vc = vdupq_n_s32(-(int32_t) c);
+    int32x4_t vc = vdupq_n_s32(-(int32_t)c);
     return vreinterpretq_m128i_u32(vshlq_u32(vreinterpretq_u32_m128i(a), vc));
 }
 
@@ -1950,7 +1998,7 @@ FORCE_INLINE __m128i _mm_srl_epi64(__m128i a, __m128i count)
     if (c > 63)
         return _mm_setzero_si128();
 
-    int64x2_t vc = vdupq_n_s64(-(int64_t) c);
+    int64x2_t vc = vdupq_n_s64(-(int64_t)c);
     return vreinterpretq_m128i_u64(vshlq_u64(vreinterpretq_u64_m128i(a), vc));
 }
 
@@ -2048,7 +2096,7 @@ FORCE_INLINE int _mm_movemask_epi8(__m128i a)
     //                      ||  return paired64[0]
     //                      d2
     // Note: Little endian would return the correct value 4b (01001011) instead.
-    return vgetq_lane_u8(paired64, 0) | ((int) vgetq_lane_u8(paired64, 8) << 8);
+    return vgetq_lane_u8(paired64, 0) | ((int)vgetq_lane_u8(paired64, 8) << 8);
 #endif
 }
 
@@ -2082,7 +2130,7 @@ FORCE_INLINE int _mm_movemask_ps(__m128 a)
 FORCE_INLINE int _mm_test_all_ones(__m128i a)
 {
     return (uint64_t)(vgetq_lane_s64(a, 0) & vgetq_lane_s64(a, 1)) ==
-           ~(uint64_t) 0;
+           ~(uint64_t)0;
 }
 
 // Compute the bitwise AND of 128 bits (representing integer data) in a and
@@ -2395,8 +2443,8 @@ FORCE_INLINE __m128i _mm_avg_epu8(__m128i a, __m128i b)
 // https://msdn.microsoft.com/en-us/library/vstudio/y13ca3c8(v=vs.90).aspx
 FORCE_INLINE __m128i _mm_avg_epu16(__m128i a, __m128i b)
 {
-    return (__m128i) vrhaddq_u16(vreinterpretq_u16_m128i(a),
-                                 vreinterpretq_u16_m128i(b));
+    return (__m128i)vrhaddq_u16(vreinterpretq_u16_m128i(a),
+                                vreinterpretq_u16_m128i(b));
 }
 
 // Adds the four single-precision, floating-point values of a and b.
@@ -2422,12 +2470,12 @@ FORCE_INLINE __m128d _mm_add_pd(__m128d a, __m128d b)
     return vreinterpretq_m128d_f64(
         vaddq_f64(vreinterpretq_f64_m128d(a), vreinterpretq_f64_m128d(b)));
 #else
-    double *da = (double *) &a;
-    double *db = (double *) &b;
+    double *da = (double *)&a;
+    double *db = (double *)&b;
     double c[2];
     c[0] = da[0] + db[0];
     c[1] = da[1] + db[1];
-    return vld1q_f32((float32_t *) c);
+    return vld1q_f32((float32_t *)c);
 #endif
 }
 
@@ -2688,11 +2736,11 @@ FORCE_INLINE __m128 _mm_addsub_ps(__m128 a, __m128 b)
 // https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm_sad_epu8
 FORCE_INLINE __m128i _mm_sad_epu8(__m128i a, __m128i b)
 {
-    uint16x8_t t = vpaddlq_u8(vabdq_u8((uint8x16_t) a, (uint8x16_t) b));
+    uint16x8_t t = vpaddlq_u8(vabdq_u8((uint8x16_t)a, (uint8x16_t)b));
     uint16_t r0 = t[0] + t[1] + t[2] + t[3];
     uint16_t r4 = t[4] + t[5] + t[6] + t[7];
     uint16x8_t r = vsetq_lane_u16(r0, vdupq_n_u16(0), 0);
-    return (__m128i) vsetq_lane_u16(r4, r, 4);
+    return (__m128i)vsetq_lane_u16(r4, r, 4);
 }
 
 // Compute the absolute differences of packed unsigned 8-bit integers in a and
@@ -3248,10 +3296,12 @@ FORCE_INLINE __m128 _mm_dp_ps(__m128 a, __m128 b, const int imm)
 {
 #if defined(__aarch64__)
     /* shortcuts */
-    if (imm == 0xFF) {
+    if (imm == 0xFF)
+    {
         return _mm_set1_ps(vaddvq_f32(_mm_mul_ps(a, b)));
     }
-    if (imm == 0x7F) {
+    if (imm == 0x7F)
+    {
         float32x4_t m = _mm_mul_ps(a, b);
         m[3] = 0;
         return _mm_set1_ps(vaddvq_f32(m));
@@ -3541,7 +3591,6 @@ FORCE_INLINE __m128i _mm_cmpgt_epi16(__m128i a, __m128i b)
         vcgtq_s16(vreinterpretq_s16_m128i(a), vreinterpretq_s16_m128i(b)));
 }
 
-
 // Compares the 4 signed 32-bit integers in a and the 4 signed 32-bit integers
 // in b for less than.
 // https://msdn.microsoft.com/en-us/library/vstudio/4ak0bf5d(v=vs.100).aspx
@@ -3764,13 +3813,14 @@ FORCE_INLINE int _mm_cvt_ss2si(__m128 a)
     float32_t data = vgetq_lane_f32(vreinterpretq_f32_m128(a), 0);
     float32_t diff = data - floor(data);
     if (diff > 0.5)
-        return (int32_t) ceil(data);
-    if (diff == 0.5) {
-        int32_t f = (int32_t) floor(data);
-        int32_t c = (int32_t) ceil(data);
+        return (int32_t)ceil(data);
+    if (diff == 0.5)
+    {
+        int32_t f = (int32_t)floor(data);
+        int32_t c = (int32_t)ceil(data);
         return c & 1 ? f : c;
     }
-    return (int32_t) floor(data);
+    return (int32_t)floor(data);
 #endif
 }
 
@@ -3932,7 +3982,7 @@ FORCE_INLINE __m128i _mm_cvtps_epi32(__m128 a)
                                  vdupq_n_s32(1)); /* ([a] + {0,1}) & ~1 */
     float32x4_t delta = vsubq_f32(
         vreinterpretq_f32_m128(a),
-        vcvtq_f32_s32(r_trunc)); /* compute delta: delta = (a - [a]) */
+        vcvtq_f32_s32(r_trunc));                       /* compute delta: delta = (a - [a]) */
     uint32x4_t is_delta_half = vceqq_f32(delta, half); /* delta == +/- 0.5 */
     return vreinterpretq_m128i_s32(vbslq_s32(is_delta_half, r_even, r_normal));
 #endif
@@ -4004,14 +4054,14 @@ FORCE_INLINE __m128 _mm_castsi128_ps(__m128i a)
 // https://msdn.microsoft.com/en-us/library/atzzad1h(v=vs.80).aspx
 FORCE_INLINE __m128i _mm_load_si128(const __m128i *p)
 {
-    return vreinterpretq_m128i_s32(vld1q_s32((const int32_t *) p));
+    return vreinterpretq_m128i_s32(vld1q_s32((const int32_t *)p));
 }
 
 // Loads 128-bit value. :
 // https://msdn.microsoft.com/zh-cn/library/f4k12ae8(v=vs.90).aspx
 FORCE_INLINE __m128i _mm_loadu_si128(const __m128i *p)
 {
-    return vreinterpretq_m128i_s32(vld1q_s32((const int32_t *) p));
+    return vreinterpretq_m128i_s32(vld1q_s32((const int32_t *)p));
 }
 
 // Convert packed double-precision (64-bit) floating-point elements in a to
@@ -4032,8 +4082,8 @@ FORCE_INLINE __m128 _mm_cvtpd_ps(__m128d a)
     float32x2_t tmp = vcvt_f32_f64(vreinterpretq_f64_m128d(a));
     return vreinterpretq_m128_f32(vcombine_f32(tmp, vdup_n_f32(0)));
 #else
-    float a0 = (float) ((double *) &a)[0];
-    float a1 = (float) ((double *) &a)[1];
+    float a0 = (float)((double *)&a)[0];
+    float a1 = (float)((double *)&a)[1];
     return _mm_set_ps(0, 0, a1, a0);
 #endif
 }
@@ -4055,8 +4105,8 @@ FORCE_INLINE __m128d _mm_cvtps_pd(__m128 a)
     return vreinterpretq_m128d_f64(
         vcvt_f64_f32(vget_low_f32(vreinterpretq_f32_m128(a))));
 #else
-    double a0 = (double) vgetq_lane_f32(vreinterpretq_f32_m128(a), 0);
-    double a1 = (double) vgetq_lane_f32(vreinterpretq_f32_m128(a), 1);
+    double a0 = (double)vgetq_lane_f32(vreinterpretq_f32_m128(a), 0);
+    double a1 = (double)vgetq_lane_f32(vreinterpretq_f32_m128(a), 1);
     return _mm_set_pd(a1, a0);
 #endif
 }
@@ -4086,7 +4136,8 @@ FORCE_INLINE __m128 _mm_blendv_ps(__m128 a, __m128 b, __m128 mask)
 FORCE_INLINE __m128 _mm_round_ps(__m128 a, int rounding)
 {
 #if defined(__aarch64__)
-    switch (rounding) {
+    switch (rounding)
+    {
     case (_MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC):
         return vreinterpretq_m128_f32(vrndnq_f32(vreinterpretq_f32_m128(a)));
     case (_MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC):
@@ -4095,14 +4146,15 @@ FORCE_INLINE __m128 _mm_round_ps(__m128 a, int rounding)
         return vreinterpretq_m128_f32(vrndpq_f32(vreinterpretq_f32_m128(a)));
     case (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC):
         return vreinterpretq_m128_f32(vrndq_f32(vreinterpretq_f32_m128(a)));
-    default:  //_MM_FROUND_CUR_DIRECTION
+    default: //_MM_FROUND_CUR_DIRECTION
         return vreinterpretq_m128_f32(vrndiq_f32(vreinterpretq_f32_m128(a)));
     }
 #else
-    float *v_float = (float *) &a;
+    float *v_float = (float *)&a;
     __m128 zero, neg_inf, pos_inf;
 
-    switch (rounding) {
+    switch (rounding)
+    {
     case (_MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC):
         return _mm_cvtepi32_ps(_mm_cvtps_epi32(a));
     case (_MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC):
@@ -4118,7 +4170,7 @@ FORCE_INLINE __m128 _mm_round_ps(__m128 a, int rounding)
         pos_inf = _mm_set_ps(ceilf(v_float[0]), ceilf(v_float[1]),
                              ceilf(v_float[2]), ceilf(v_float[3]));
         return _mm_blendv_ps(pos_inf, neg_inf, _mm_cmple_ps(a, zero));
-    default:  //_MM_FROUND_CUR_DIRECTION
+    default: //_MM_FROUND_CUR_DIRECTION
         return (__m128){roundf(v_float[0]), roundf(v_float[1]),
                         roundf(v_float[2]), roundf(v_float[3])};
     }
@@ -4159,10 +4211,10 @@ FORCE_INLINE __m128 _mm_floor_ps(__m128 a)
 // https://msdn.microsoft.com/en-us/library/3c9997dk(v%3dvs.90).aspx
 FORCE_INLINE __m128i _mm_sra_epi16(__m128i a, __m128i count)
 {
-    int64_t c = (int64_t) vget_low_s64((int64x2_t) count);
+    int64_t c = (int64_t)vget_low_s64((int64x2_t)count);
     if (c > 15)
         return _mm_cmplt_epi16(a, _mm_setzero_si128());
-    return vreinterpretq_m128i_s16(vshlq_s16((int16x8_t) a, vdupq_n_s16(-c)));
+    return vreinterpretq_m128i_s16(vshlq_s16((int16x8_t)a, vdupq_n_s16(-c)));
 }
 
 // Shifts the 4 signed 32-bit integers in a right by count bits while shifting
@@ -4176,10 +4228,10 @@ FORCE_INLINE __m128i _mm_sra_epi16(__m128i a, __m128i count)
 // https://msdn.microsoft.com/en-us/library/ce40009e(v%3dvs.100).aspx
 FORCE_INLINE __m128i _mm_sra_epi32(__m128i a, __m128i count)
 {
-    int64_t c = (int64_t) vget_low_s64((int64x2_t) count);
+    int64_t c = (int64_t)vget_low_s64((int64x2_t)count);
     if (c > 31)
         return _mm_cmplt_epi32(a, _mm_setzero_si128());
-    return vreinterpretq_m128i_s32(vshlq_s32((int32x4_t) a, vdupq_n_s32(-c)));
+    return vreinterpretq_m128i_s32(vshlq_s32((int32x4_t)a, vdupq_n_s32(-c)));
 }
 
 // Packs the 16 signed 16-bit integers from a and b into 8-bit integers and
@@ -4492,9 +4544,11 @@ FORCE_INLINE __m128i _mm_minpos_epu16(__m128i a)
 #endif
     // Get the index of the minimum value
     int i;
-    for (i = 0; i < 8; i++) {
-        if (min == vgetq_lane_u16(vreinterpretq_u16_m128i(a), 0)) {
-            idx = (uint16_t) i;
+    for (i = 0; i < 8; i++)
+    {
+        if (min == vgetq_lane_u16(vreinterpretq_u16_m128i(a), 0))
+        {
+            idx = (uint16_t)i;
             break;
         }
         a = _mm_srli_si128(a, 2);
@@ -4514,7 +4568,7 @@ FORCE_INLINE __m128i _mm_minpos_epu16(__m128i a)
 // Clang requires a macro here, as it is extremely picky about c being a
 // literal.
 #define _mm_alignr_epi8(a, b, c) \
-    ((__m128i) vextq_s8((int8x16_t)(b), (int8x16_t)(a), (c)))
+    ((__m128i)vextq_s8((int8x16_t)(b), (int8x16_t)(a), (c)))
 
 // Compute the bitwise AND of 128 bits (representing integer data) in a and b,
 // and set ZF to 1 if the result is zero, otherwise set ZF to 0. Compute the
@@ -4606,7 +4660,7 @@ FORCE_INLINE int _mm_popcnt_u32(unsigned int a)
 #if __has_builtin(__builtin_popcount)
     return __builtin_popcount(a);
 #else
-    return (int) vaddlv_u8(vcnt_u8(vcreate_u8((uint64_t) a)));
+    return (int)vaddlv_u8(vcnt_u8(vcreate_u8((uint64_t)a)));
 #endif
 #else
     uint32_t count = 0;
@@ -4614,7 +4668,7 @@ FORCE_INLINE int _mm_popcnt_u32(unsigned int a)
     uint16x4_t count16x4_val;
     uint32x2_t count32x2_val;
 
-    input_val = vld1_u8((uint8_t *) &a);
+    input_val = vld1_u8((uint8_t *)&a);
     count8x8_val = vcnt_u8(input_val);
     count16x4_val = vpaddl_u8(count8x8_val);
     count32x2_val = vpaddl_u16(count16x4_val);
@@ -4633,7 +4687,7 @@ FORCE_INLINE int64_t _mm_popcnt_u64(uint64_t a)
 #if __has_builtin(__builtin_popcountll)
     return __builtin_popcountll(a);
 #else
-    return (int64_t) vaddlv_u8(vcnt_u8(vcreate_u8(a)));
+    return (int64_t)vaddlv_u8(vcnt_u8(vcreate_u8(a)));
 #endif
 #else
     uint64_t count = 0;
@@ -4642,7 +4696,7 @@ FORCE_INLINE int64_t _mm_popcnt_u64(uint64_t a)
     uint32x2_t count32x2_val;
     uint64x1_t count64x1_val;
 
-    input_val = vld1_u8((uint8_t *) &a);
+    input_val = vld1_u8((uint8_t *)&a);
     count8x8_val = vcnt_u8(input_val);
     count16x4_val = vpaddl_u8(count8x8_val);
     count32x2_val = vpaddl_u16(count16x4_val);
@@ -4657,7 +4711,8 @@ FORCE_INLINE int64_t _mm_popcnt_u64(uint64_t a)
 // transposed matrix in these vectors (row0 now contains column 0, etc.).
 // https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=MM_TRANSPOSE4_PS
 #define _MM_TRANSPOSE4_PS(row0, row1, row2, row3)         \
-    do {                                                  \
+    do                                                    \
+    {                                                     \
         float32x4x2_t ROW01 = vtrnq_f32(row0, row1);      \
         float32x4x2_t ROW23 = vtrnq_f32(row2, row3);      \
         row0 = vcombine_f32(vget_low_f32(ROW01.val[0]),   \
@@ -4680,7 +4735,7 @@ FORCE_INLINE uint64x2_t _sse2neon_vmull_p64(uint64x1_t _a, uint64x1_t _b)
     poly64_t b = vget_lane_p64(vreinterpret_p64_u64(_b), 0);
     return vreinterpretq_u64_p128(vmull_p64(a, b));
 }
-#else  // ARMv7 polyfill
+#else // ARMv7 polyfill
 // ARMv7/some A64 lacks vmull_p64, but it has vmull_p8.
 //
 // vmull_p8 calculates 8 8-bit->16-bit polynomial multiplies, but we need a
@@ -4706,26 +4761,26 @@ static uint64x2_t _sse2neon_vmull_p64(uint64x1_t _a, uint64x1_t _b)
                                     vcreate_u8(0x0000000000000000));
 
     // Do the multiplies, rotating with vext to get all combinations
-    uint8x16_t d = vreinterpretq_u8_p16(vmull_p8(a, b));  // D = A0 * B0
+    uint8x16_t d = vreinterpretq_u8_p16(vmull_p8(a, b)); // D = A0 * B0
     uint8x16_t e =
-        vreinterpretq_u8_p16(vmull_p8(a, vext_p8(b, b, 1)));  // E = A0 * B1
+        vreinterpretq_u8_p16(vmull_p8(a, vext_p8(b, b, 1))); // E = A0 * B1
     uint8x16_t f =
-        vreinterpretq_u8_p16(vmull_p8(vext_p8(a, a, 1), b));  // F = A1 * B0
+        vreinterpretq_u8_p16(vmull_p8(vext_p8(a, a, 1), b)); // F = A1 * B0
     uint8x16_t g =
-        vreinterpretq_u8_p16(vmull_p8(a, vext_p8(b, b, 2)));  // G = A0 * B2
+        vreinterpretq_u8_p16(vmull_p8(a, vext_p8(b, b, 2))); // G = A0 * B2
     uint8x16_t h =
-        vreinterpretq_u8_p16(vmull_p8(vext_p8(a, a, 2), b));  // H = A2 * B0
+        vreinterpretq_u8_p16(vmull_p8(vext_p8(a, a, 2), b)); // H = A2 * B0
     uint8x16_t i =
-        vreinterpretq_u8_p16(vmull_p8(a, vext_p8(b, b, 3)));  // I = A0 * B3
+        vreinterpretq_u8_p16(vmull_p8(a, vext_p8(b, b, 3))); // I = A0 * B3
     uint8x16_t j =
-        vreinterpretq_u8_p16(vmull_p8(vext_p8(a, a, 3), b));  // J = A3 * B0
+        vreinterpretq_u8_p16(vmull_p8(vext_p8(a, a, 3), b)); // J = A3 * B0
     uint8x16_t k =
-        vreinterpretq_u8_p16(vmull_p8(a, vext_p8(b, b, 4)));  // L = A0 * B4
+        vreinterpretq_u8_p16(vmull_p8(a, vext_p8(b, b, 4))); // L = A0 * B4
 
     // Add cross products
-    uint8x16_t l = veorq_u8(e, f);  // L = E + F
-    uint8x16_t m = veorq_u8(g, h);  // M = G + H
-    uint8x16_t n = veorq_u8(i, j);  // N = I + J
+    uint8x16_t l = veorq_u8(e, f); // L = E + F
+    uint8x16_t m = veorq_u8(g, h); // M = G + H
+    uint8x16_t n = veorq_u8(i, j); // N = I + J
 
     // Interleave. Using vzip1 and vzip2 prevents Clang from emitting TBL
     // instructions.
@@ -4773,10 +4828,10 @@ static uint64x2_t _sse2neon_vmull_p64(uint64x1_t _a, uint64x1_t _b)
     uint8x16_t t2 = vcombine_u8(vget_low_u8(t2t3_l), vget_low_u8(t2t3_h));
 #endif
     // Shift the cross products
-    uint8x16_t t0_shift = vextq_u8(t0, t0, 15);  // t0 << 8
-    uint8x16_t t1_shift = vextq_u8(t1, t1, 14);  // t1 << 16
-    uint8x16_t t2_shift = vextq_u8(t2, t2, 13);  // t2 << 24
-    uint8x16_t t3_shift = vextq_u8(t3, t3, 12);  // t3 << 32
+    uint8x16_t t0_shift = vextq_u8(t0, t0, 15); // t0 << 8
+    uint8x16_t t1_shift = vextq_u8(t1, t1, 14); // t1 << 16
+    uint8x16_t t2_shift = vextq_u8(t2, t2, 13); // t2 << 24
+    uint8x16_t t3_shift = vextq_u8(t3, t3, 12); // t3 << 32
 
     // Accumulate the products
     uint8x16_t cross1 = veorq_u8(t0_shift, t1_shift);
@@ -4785,13 +4840,14 @@ static uint64x2_t _sse2neon_vmull_p64(uint64x1_t _a, uint64x1_t _b)
     uint8x16_t r = veorq_u8(mix, cross2);
     return vreinterpretq_u64_u8(r);
 }
-#endif  // ARMv7 polyfill
+#endif // ARMv7 polyfill
 
 FORCE_INLINE __m128i _mm_clmulepi64_si128(__m128i _a, __m128i _b, const int imm)
 {
     uint64x2_t a = vreinterpretq_u64_m128i(_a);
     uint64x2_t b = vreinterpretq_u64_m128i(_b);
-    switch (imm & 0x11) {
+    switch (imm & 0x11)
+    {
     case 0x00:
         return vreinterpretq_m128i_u64(
             _sse2neon_vmull_p64(vget_low_u64(a), vget_low_u64(b)));
@@ -4809,225 +4865,83 @@ FORCE_INLINE __m128i _mm_clmulepi64_si128(__m128i _a, __m128i _b, const int imm)
     }
 }
 
-#if !defined(__ARM_FEATURE_CRYPTO)
-/* clang-format off */
-#define SSE2NEON_AES_DATA(w)                                           \
-    {                                                                  \
-        w(0x63), w(0x7c), w(0x77), w(0x7b), w(0xf2), w(0x6b), w(0x6f), \
-        w(0xc5), w(0x30), w(0x01), w(0x67), w(0x2b), w(0xfe), w(0xd7), \
-        w(0xab), w(0x76), w(0xca), w(0x82), w(0xc9), w(0x7d), w(0xfa), \
-        w(0x59), w(0x47), w(0xf0), w(0xad), w(0xd4), w(0xa2), w(0xaf), \
-        w(0x9c), w(0xa4), w(0x72), w(0xc0), w(0xb7), w(0xfd), w(0x93), \
-        w(0x26), w(0x36), w(0x3f), w(0xf7), w(0xcc), w(0x34), w(0xa5), \
-        w(0xe5), w(0xf1), w(0x71), w(0xd8), w(0x31), w(0x15), w(0x04), \
-        w(0xc7), w(0x23), w(0xc3), w(0x18), w(0x96), w(0x05), w(0x9a), \
-        w(0x07), w(0x12), w(0x80), w(0xe2), w(0xeb), w(0x27), w(0xb2), \
-        w(0x75), w(0x09), w(0x83), w(0x2c), w(0x1a), w(0x1b), w(0x6e), \
-        w(0x5a), w(0xa0), w(0x52), w(0x3b), w(0xd6), w(0xb3), w(0x29), \
-        w(0xe3), w(0x2f), w(0x84), w(0x53), w(0xd1), w(0x00), w(0xed), \
-        w(0x20), w(0xfc), w(0xb1), w(0x5b), w(0x6a), w(0xcb), w(0xbe), \
-        w(0x39), w(0x4a), w(0x4c), w(0x58), w(0xcf), w(0xd0), w(0xef), \
-        w(0xaa), w(0xfb), w(0x43), w(0x4d), w(0x33), w(0x85), w(0x45), \
-        w(0xf9), w(0x02), w(0x7f), w(0x50), w(0x3c), w(0x9f), w(0xa8), \
-        w(0x51), w(0xa3), w(0x40), w(0x8f), w(0x92), w(0x9d), w(0x38), \
-        w(0xf5), w(0xbc), w(0xb6), w(0xda), w(0x21), w(0x10), w(0xff), \
-        w(0xf3), w(0xd2), w(0xcd), w(0x0c), w(0x13), w(0xec), w(0x5f), \
-        w(0x97), w(0x44), w(0x17), w(0xc4), w(0xa7), w(0x7e), w(0x3d), \
-        w(0x64), w(0x5d), w(0x19), w(0x73), w(0x60), w(0x81), w(0x4f), \
-        w(0xdc), w(0x22), w(0x2a), w(0x90), w(0x88), w(0x46), w(0xee), \
-        w(0xb8), w(0x14), w(0xde), w(0x5e), w(0x0b), w(0xdb), w(0xe0), \
-        w(0x32), w(0x3a), w(0x0a), w(0x49), w(0x06), w(0x24), w(0x5c), \
-        w(0xc2), w(0xd3), w(0xac), w(0x62), w(0x91), w(0x95), w(0xe4), \
-        w(0x79), w(0xe7), w(0xc8), w(0x37), w(0x6d), w(0x8d), w(0xd5), \
-        w(0x4e), w(0xa9), w(0x6c), w(0x56), w(0xf4), w(0xea), w(0x65), \
-        w(0x7a), w(0xae), w(0x08), w(0xba), w(0x78), w(0x25), w(0x2e), \
-        w(0x1c), w(0xa6), w(0xb4), w(0xc6), w(0xe8), w(0xdd), w(0x74), \
-        w(0x1f), w(0x4b), w(0xbd), w(0x8b), w(0x8a), w(0x70), w(0x3e), \
-        w(0xb5), w(0x66), w(0x48), w(0x03), w(0xf6), w(0x0e), w(0x61), \
-        w(0x35), w(0x57), w(0xb9), w(0x86), w(0xc1), w(0x1d), w(0x9e), \
-        w(0xe1), w(0xf8), w(0x98), w(0x11), w(0x69), w(0xd9), w(0x8e), \
-        w(0x94), w(0x9b), w(0x1e), w(0x87), w(0xe9), w(0xce), w(0x55), \
-        w(0x28), w(0xdf), w(0x8c), w(0xa1), w(0x89), w(0x0d), w(0xbf), \
-        w(0xe6), w(0x42), w(0x68), w(0x41), w(0x99), w(0x2d), w(0x0f), \
-        w(0xb0), w(0x54), w(0xbb), w(0x16)                             \
-    }
-/* clang-format on */
-
-/* X Macro trick. See https://en.wikipedia.org/wiki/X_Macro */
-#define SSE2NEON_AES_H0(x) (x)
-static const uint8_t SSE2NEON_sbox[256] = SSE2NEON_AES_DATA(SSE2NEON_AES_H0);
-#undef SSE2NEON_AES_H0
-
-// In the absence of crypto extensions, implement aesenc using regular neon
-// intrinsics instead. See:
-// https://www.workofard.com/2017/01/accelerated-aes-for-the-arm64-linux-kernel/
-// https://www.workofard.com/2017/07/ghash-for-low-end-cores/ and
-// https://github.com/ColinIanKing/linux-next-mirror/blob/b5f466091e130caaf0735976648f72bd5e09aa84/crypto/aegis128-neon-inner.c#L52
-// for more information Reproduced with permission of the author.
+#if defined(__ARM_FEATURE_CRYPTO)
+// Case 1: ARMv8 with Crypto Extensions (fast hardware AES)
 FORCE_INLINE __m128i _mm_aesenc_si128(__m128i EncBlock, __m128i RoundKey)
 {
-#if defined(__aarch64__)
-    static const uint8_t shift_rows[] = {0x0, 0x5, 0xa, 0xf, 0x4, 0x9,
-                                         0xe, 0x3, 0x8, 0xd, 0x2, 0x7,
-                                         0xc, 0x1, 0x6, 0xb};
+    return vreinterpretq_m128i_u8(
+        vaesmcq_u8(vaeseq_u8(vreinterpretq_u8_m128i(EncBlock), vdupq_n_u8(0))) ^
+        vreinterpretq_u8_m128i(RoundKey));
+}
+
+FORCE_INLINE __m128i _mm_aesenclast_si128(__m128i a, __m128i RoundKey)
+{
+    return _mm_xor_si128(
+        vreinterpretq_m128i_u8(vaeseq_u8(vreinterpretq_u8_m128i(a), vdupq_n_u8(0))),
+        RoundKey);
+}
+
+FORCE_INLINE __m128i _mm_aeskeygenassist_si128(__m128i a, const int rcon)
+{
+    uint8x16_t u8 = vaeseq_u8(vreinterpretq_u8_m128i(a), vdupq_n_u8(0));
+    uint8x16_t dest = {
+        u8[0x4],
+        u8[0x1],
+        u8[0xE],
+        u8[0xB],
+        u8[0x1],
+        u8[0xE],
+        u8[0xB],
+        u8[0x4],
+        u8[0xC],
+        u8[0x9],
+        u8[0x6],
+        u8[0x3],
+        u8[0x9],
+        u8[0x6],
+        u8[0x3],
+        u8[0xC],
+    };
+    uint32x4_t r = {0, (unsigned)rcon, 0, (unsigned)rcon};
+    return vreinterpretq_m128i_u8(dest) ^ vreinterpretq_m128i_u32(r);
+}
+
+#elif defined(__aarch64__)
+// Case 2: ARMv8 without Crypto Extensions (use NEON-based AES emulation)
+FORCE_INLINE __m128i _mm_aesenc_si128(__m128i EncBlock, __m128i RoundKey)
+{
+    static const uint8_t shift_rows[] = {0x0, 0x5, 0xa, 0xf, 0x4, 0x9, 0xe, 0x3,
+                                         0x8, 0xd, 0x2, 0x7, 0xc, 0x1, 0x6, 0xb};
     static const uint8_t ror32by8[] = {0x1, 0x2, 0x3, 0x0, 0x5, 0x6, 0x7, 0x4,
                                        0x9, 0xa, 0xb, 0x8, 0xd, 0xe, 0xf, 0xc};
 
     uint8x16_t v;
     uint8x16_t w = vreinterpretq_u8_m128i(EncBlock);
 
-    // shift rows
+    // ShiftRows
     w = vqtbl1q_u8(w, vld1q_u8(shift_rows));
 
-    // sub bytes
+    // SubBytes (AES S-Box lookup)
     v = vqtbl4q_u8(vld1q_u8_x4(SSE2NEON_sbox), w);
     v = vqtbx4q_u8(v, vld1q_u8_x4(SSE2NEON_sbox + 0x40), w - 0x40);
     v = vqtbx4q_u8(v, vld1q_u8_x4(SSE2NEON_sbox + 0x80), w - 0x80);
     v = vqtbx4q_u8(v, vld1q_u8_x4(SSE2NEON_sbox + 0xc0), w - 0xc0);
 
-    // mix columns
-    w = (v << 1) ^ (uint8x16_t)(((int8x16_t) v >> 7) & 0x1b);
-    w ^= (uint8x16_t) vrev32q_u16((uint16x8_t) v);
+    // MixColumns
+    w = (v << 1) ^ (uint8x16_t)(((int8x16_t)v >> 7) & 0x1b);
+    w ^= (uint8x16_t)vrev32q_u16((uint16x8_t)v);
     w ^= vqtbl1q_u8(v ^ w, vld1q_u8(ror32by8));
 
-    //  add round key
     return vreinterpretq_m128i_u8(w) ^ RoundKey;
-
-#else /* ARMv7-A NEON implementation */
-#define SSE2NEON_AES_B2W(b0, b1, b2, b3)                                       \
-    (((uint32_t)(b3) << 24) | ((uint32_t)(b2) << 16) | ((uint32_t)(b1) << 8) | \
-     (b0))
-#define SSE2NEON_AES_F2(x) ((x << 1) ^ (((x >> 7) & 1) * 0x011b /* WPOLY */))
-#define SSE2NEON_AES_F3(x) (SSE2NEON_AES_F2(x) ^ x)
-#define SSE2NEON_AES_U0(p) \
-    SSE2NEON_AES_B2W(SSE2NEON_AES_F2(p), p, p, SSE2NEON_AES_F3(p))
-#define SSE2NEON_AES_U1(p) \
-    SSE2NEON_AES_B2W(SSE2NEON_AES_F3(p), SSE2NEON_AES_F2(p), p, p)
-#define SSE2NEON_AES_U2(p) \
-    SSE2NEON_AES_B2W(p, SSE2NEON_AES_F3(p), SSE2NEON_AES_F2(p), p)
-#define SSE2NEON_AES_U3(p) \
-    SSE2NEON_AES_B2W(p, p, SSE2NEON_AES_F3(p), SSE2NEON_AES_F2(p))
-    static const uint32_t ALIGN_STRUCT(16) aes_table[4][256] = {
-        SSE2NEON_AES_DATA(SSE2NEON_AES_U0),
-        SSE2NEON_AES_DATA(SSE2NEON_AES_U1),
-        SSE2NEON_AES_DATA(SSE2NEON_AES_U2),
-        SSE2NEON_AES_DATA(SSE2NEON_AES_U3),
-    };
-#undef SSE2NEON_AES_B2W
-#undef SSE2NEON_AES_F2
-#undef SSE2NEON_AES_F3
-#undef SSE2NEON_AES_U0
-#undef SSE2NEON_AES_U1
-#undef SSE2NEON_AES_U2
-#undef SSE2NEON_AES_U3
-
-    uint32_t x0 = _mm_cvtsi128_si32(EncBlock);
-    uint32_t x1 = _mm_cvtsi128_si32(_mm_shuffle_epi32(EncBlock, 0x55));
-    uint32_t x2 = _mm_cvtsi128_si32(_mm_shuffle_epi32(EncBlock, 0xAA));
-    uint32_t x3 = _mm_cvtsi128_si32(_mm_shuffle_epi32(EncBlock, 0xFF));
-
-    __m128i out = _mm_set_epi32(
-        (aes_table[0][x3 & 0xff] ^ aes_table[1][(x0 >> 8) & 0xff] ^
-         aes_table[2][(x1 >> 16) & 0xff] ^ aes_table[3][x2 >> 24]),
-        (aes_table[0][x2 & 0xff] ^ aes_table[1][(x3 >> 8) & 0xff] ^
-         aes_table[2][(x0 >> 16) & 0xff] ^ aes_table[3][x1 >> 24]),
-        (aes_table[0][x1 & 0xff] ^ aes_table[1][(x2 >> 8) & 0xff] ^
-         aes_table[2][(x3 >> 16) & 0xff] ^ aes_table[3][x0 >> 24]),
-        (aes_table[0][x0 & 0xff] ^ aes_table[1][(x1 >> 8) & 0xff] ^
-         aes_table[2][(x2 >> 16) & 0xff] ^ aes_table[3][x3 >> 24]));
-
-    return _mm_xor_si128(out, RoundKey);
-#endif
 }
 
-FORCE_INLINE __m128i _mm_aesenclast_si128(__m128i a, __m128i RoundKey)
+#else
+// Case 3: ARMv7 with NEON (software AES)
+FORCE_INLINE __m128i _mm_aesenc_si128(__m128i EncBlock, __m128i RoundKey)
 {
-    /* FIXME: optimized for NEON */
-    uint8_t v[4][4] = {
-        [0] = {SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 0)],
-               SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 5)],
-               SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 10)],
-               SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 15)]},
-        [1] = {SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 4)],
-               SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 9)],
-               SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 14)],
-               SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 3)]},
-        [2] = {SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 8)],
-               SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 13)],
-               SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 2)],
-               SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 7)]},
-        [3] = {SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 12)],
-               SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 1)],
-               SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 6)],
-               SSE2NEON_sbox[vreinterpretq_nth_u8_m128i(a, 11)]},
-    };
-    for (int i = 0; i < 16; i++)
-        vreinterpretq_nth_u8_m128i(a, i) =
-            v[i / 4][i % 4] ^ vreinterpretq_nth_u8_m128i(RoundKey, i);
-    return a;
-}
-
-// Emits the Advanced Encryption Standard (AES) instruction aeskeygenassist.
-// This instruction generates a round key for AES encryption. See
-// https://kazakov.life/2017/11/01/cryptocurrency-mining-on-ios-devices/
-// for details.
-//
-// https://msdn.microsoft.com/en-us/library/cc714138(v=vs.120).aspx
-FORCE_INLINE __m128i _mm_aeskeygenassist_si128(__m128i key, const int rcon)
-{
-    uint32_t X1 = _mm_cvtsi128_si32(_mm_shuffle_epi32(key, 0x55));
-    uint32_t X3 = _mm_cvtsi128_si32(_mm_shuffle_epi32(key, 0xFF));
-    for (int i = 0; i < 4; ++i) {
-        ((uint8_t *) &X1)[i] = SSE2NEON_sbox[((uint8_t *) &X1)[i]];
-        ((uint8_t *) &X3)[i] = SSE2NEON_sbox[((uint8_t *) &X3)[i]];
-    }
-    return _mm_set_epi32(((X3 >> 8) | (X3 << 24)) ^ rcon, X3,
-                         ((X1 >> 8) | (X1 << 24)) ^ rcon, X1);
-}
-#undef SSE2NEON_AES_DATA
-
-#else /* __ARM_FEATURE_CRYPTO */
-// Implements equivalent of 'aesenc' by combining AESE (with an empty key) and
-// AESMC and then manually applying the real key as an xor operation. This
-// unfortunately means an additional xor op; the compiler should be able to
-// optimize this away for repeated calls however. See
-// https://blog.michaelbrase.com/2018/05/08/emulating-x86-aes-intrinsics-on-armv8-a
-// for more details.
-FORCE_INLINE __m128i _mm_aesenc_si128(__m128i a, __m128i b)
-{
-    return vreinterpretq_m128i_u8(
-        vaesmcq_u8(vaeseq_u8(vreinterpretq_u8_m128i(a), vdupq_n_u8(0))) ^
-        vreinterpretq_u8_m128i(b));
-}
-//FORCE_INLINE __m128i _mm_aesenc_si128(__m128i a, __m128i b)
-//{
-//    return vreinterpretq_m128i_u8(
-//        vaesmcq_u8(vaeseq_u8(vreinterpretq_u8_m128i(a), (uint8x16_t){})) ^
-//        vreinterpretq_u8_m128i(b));
-//}
-
-// https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm_aesenclast_si128
-FORCE_INLINE __m128i _mm_aesenclast_si128(__m128i a, __m128i RoundKey)
-{
-    return _mm_xor_si128(vreinterpretq_m128i_u8(vaeseq_u8(
-                             vreinterpretq_u8_m128i(a), vdupq_n_u8(0))),
-                         RoundKey);
-}
-
-FORCE_INLINE __m128i _mm_aeskeygenassist_si128(__m128i a, const int rcon)
-{
-    // AESE does ShiftRows and SubBytes on A
-    uint8x16_t u8 = vaeseq_u8(vreinterpretq_u8_m128i(a), vdupq_n_u8(0));
-
-    uint8x16_t dest = {
-        // Undo ShiftRows step from AESE and extract X1 and X3
-        u8[0x4], u8[0x1], u8[0xE], u8[0xB],  // SubBytes(X1)
-        u8[0x1], u8[0xE], u8[0xB], u8[0x4],  // ROT(SubBytes(X1))
-        u8[0xC], u8[0x9], u8[0x6], u8[0x3],  // SubBytes(X3)
-        u8[0x9], u8[0x6], u8[0x3], u8[0xC],  // ROT(SubBytes(X3))
-    };
-    uint32x4_t r = {0, (unsigned) rcon, 0, (unsigned) rcon};
-    return vreinterpretq_m128i_u8(dest) ^ vreinterpretq_m128i_u32(r);
+    uint8x16_t out;
+    aesb_single_round((uint8_t *)&EncBlock, (uint8_t *)&out, (uint8_t *)&RoundKey);
+    return vreinterpretq_m128i_u8(out);
 }
 #endif
 
@@ -5047,7 +4961,7 @@ FORCE_INLINE void _mm_sfence(void)
 FORCE_INLINE void _mm_stream_ps(float *p, __m128 a)
 {
 #if __has_builtin(__builtin_nontemporal_store)
-    __builtin_nontemporal_store(a, (float32x4_t *) p);
+    __builtin_nontemporal_store(a, (float32x4_t *)p);
 #else
     vst1q_f32(p, vreinterpretq_f32_m128(a));
 #endif
@@ -5062,7 +4976,7 @@ FORCE_INLINE void _mm_stream_si128(__m128i *p, __m128i a)
 #if __has_builtin(__builtin_nontemporal_store)
     __builtin_nontemporal_store(a, p);
 #else
-    vst1q_s64((int64_t *) p, vreinterpretq_s64_m128i(a));
+    vst1q_s64((int64_t *)p, vreinterpretq_s64_m128i(a));
 #endif
 }
 
@@ -5074,7 +4988,7 @@ FORCE_INLINE __m128i _mm_stream_load_si128(const __m128i *p)
 #if __has_builtin(__builtin_nontemporal_store)
     return __builtin_nontemporal_load(p);
 #else
-    return vreinterpretq_m128i_s64(vld1q_s64((const int64_t *) p));
+    return vreinterpretq_m128i_s64(vld1q_s64((const int64_t *)p));
 #endif
 }
 
@@ -5083,7 +4997,7 @@ FORCE_INLINE __m128i _mm_stream_load_si128(const __m128i *p)
 // https://msdn.microsoft.com/en-us/library/ba08y07y(v=vs.100).aspx
 FORCE_INLINE void _mm_clflush(void const *p)
 {
-    (void) p;
+    (void)p;
     // no corollary for Neon?
 }
 
@@ -5118,7 +5032,8 @@ FORCE_INLINE uint32_t _mm_crc32_u8(uint32_t crc, uint8_t v)
                          : [v] "r"(v));
 #else
     crc ^= v;
-    for (int bit = 0; bit < 8; bit++) {
+    for (int bit = 0; bit < 8; bit++)
+    {
         if (crc & 1)
             crc = (crc >> 1) ^ UINT32_C(0x82f63b78);
         else

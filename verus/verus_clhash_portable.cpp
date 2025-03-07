@@ -42,14 +42,8 @@
 #ifdef _WIN32
 #pragma warning (disable : 4146)
 #include <intrin.h>
-#else
-//#include <x86intrin.h>
-//#include "arm_neon.h"
-
-#   include "sse2neon.h"
-//#include "softaesnc.h"
-//typedef int32x4_t int32x4_t;
-
+#else //NOT WIN32
+#include "sse2neon.h"
 #endif //WIN32
 
 static inline uint32x4_t vmull_p64_arm(uint64_t a, uint64_t b) {
@@ -298,10 +292,10 @@ uint64_t precompReduction64_port(int32x4_t A) {
 	return _mm_cvtsi128_si64_emu(tmp);
 }
 
-uint8x16_t _mm_aesenc_si128 (uint8x16_t a, uint8x16_t RoundKey)
-{
-    return vaesmcq_u8(vaeseq_u8(a, (uint8x16_t){})) ^ RoundKey;
-}
+// uint8x16_t _mm_aesenc_si128 (uint8x16_t a, uint8x16_t RoundKey)
+// {
+//     return vaesmcq_u8(vaeseq_u8(a, (uint8x16_t){})) ^ RoundKey;
+// }
 
 
 // verus intermediate hash extra

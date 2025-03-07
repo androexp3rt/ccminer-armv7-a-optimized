@@ -75,7 +75,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <arm_neon.h>
+#ifdef USE_AESB
 #include "crypto/aesb.h"
+#endif
 
 /* Architecture-specific build options */
 /* FIXME: #pragma GCC push_options is only available on GCC */

@@ -53,7 +53,7 @@ static __thread uint32_t throughput = 0;
 #define htobe32(x) swab32(x)
 #endif
 
-void GenNewCLKey(unsigned char *seedBytes32, __m128i *keyback)
+void GenNewCLKey(unsigned char *seedBytes32, int32x4_t *keyback)
 {
 	// generate a new key by chain hashing with Haraka256 from the last curbuf
 	uint32_t n256blks = VERUS_KEY_SIZE >> 5;  //8832 >> 5
@@ -76,9 +76,9 @@ void GenNewCLKey(unsigned char *seedBytes32, __m128i *keyback)
 	//}
 }
 
-//extern "C" void FixKey(uint16_t *fixrand, uint16_t *fixrandex, __m128i *keyback, __m128i *keyback_master)
-inline void FixKey(uint16_t * __restrict fixrand,  uint16_t * __restrict fixrandex, __m128i *  __restrict keyback,
-	__m128i * __restrict g_prand, __m128i * __restrict g_prandex)
+//extern "C" void FixKey(uint16_t *fixrand, uint16_t *fixrandex, int32x4_t *keyback, int32x4_t *keyback_master)
+inline void FixKey(uint16_t * __restrict fixrand,  uint16_t * __restrict fixrandex, int32x4_t *  __restrict keyback,
+	int32x4_t * __restrict g_prand, int32x4_t * __restrict g_prandex)
 {
 
         for ( int64_t i = 31; i > -1; i-- )
@@ -155,7 +155,7 @@ extern "C" void VerusHashHalf(void *result2, unsigned char *data, size_t len)
 
 	memcpy(curBuf + 47, curBuf, 16);
 	memcpy(curBuf + 63, curBuf, 1);
-	//	FillExtra((__m128i *)curBuf);
+	//	FillExtra((int32x4_t *)curBuf);
 	memcpy(result2, curBuf, 64);
 };
 
@@ -163,8 +163,8 @@ extern "C" void VerusHashHalf(void *result2, unsigned char *data, size_t len)
 
 
 extern "C" void Verus2hash(unsigned char *hash, unsigned char *curBuf, unsigned char *nonce,
-        __m128i * __restrict data_key, uint8_t *gpu_init, uint16_t * __restrict fixrand, uint16_t * __restrict fixrandex, __m128i * __restrict g_prand,
-        __m128i * __restrict g_prandex, int version)
+        int32x4_t * __restrict data_key, uint8_t *gpu_init, uint16_t * __restrict fixrand, uint16_t * __restrict fixrandex, int32x4_t * __restrict g_prand,
+        int32x4_t * __restrict g_prandex, int version)
 {
 	//uint64_t mask = VERUS_KEY_SIZE128; //552
 	//if (!gpu_init[0]) {
@@ -174,7 +174,7 @@ extern "C" void Verus2hash(unsigned char *hash, unsigned char *curBuf, unsigned 
 	//}
 	memcpy(curBuf + 47, curBuf, 16);
 	memcpy(curBuf + 63, curBuf, 1);
-	//	FillExtra((__m128i *)curBuf);
+	//	FillExtra((int32x4_t *)curBuf);
 
 	uint64_t intermediate;
 	memcpy(curBuf + 32, nonce, 15);  //copy the 15bytes nonce
@@ -213,17 +213,17 @@ extern "C" int scanhash_verus(int thr_id, struct work *work, uint32_t max_nonce,
 	struct timeval tv_start, tv_end, diff;
 	double secs, solps;
 
-	//__m128i *data_key =  (__m128i *)malloc(VERUS_KEY_SIZE);
-	__m128i data[VERUS_KEY_SIZE] __attribute__ ((aligned(64)));
-	__m128i *data_key = &data[0];
-	//__m128i *data_key_prand =  (__m128i *)malloc(32 * 16);
-	__m128i data_key_rand[32 * 16] __attribute__ ((aligned(64))); 
-	__m128i *data_key_prand = &data_key_rand[0];
-	//__m128i *data_key_prandex =  (__m128i *)malloc(32 * 16);
-	__m128i data_key_randex[32 * 16] __attribute__ ((aligned(64)));  
-	__m128i *data_key_prandex = &data_key_randex[0];
-	//__m128i *data_key_prand = data_key + VERUS_KEY_SIZE128 ;
-	//__m128i *data_key_prandex = data_key + VERUS_KEY_SIZE128 + 32;
+	//int32x4_t *data_key =  (int32x4_t *)malloc(VERUS_KEY_SIZE);
+	int32x4_t data[VERUS_KEY_SIZE] __attribute__ ((aligned(64)));
+	int32x4_t *data_key = &data[0];
+	//int32x4_t *data_key_prand =  (int32x4_t *)malloc(32 * 16);
+	int32x4_t data_key_rand[32 * 16] __attribute__ ((aligned(64))); 
+	int32x4_t *data_key_prand = &data_key_rand[0];
+	//int32x4_t *data_key_prandex =  (int32x4_t *)malloc(32 * 16);
+	int32x4_t data_key_randex[32 * 16] __attribute__ ((aligned(64)));  
+	int32x4_t *data_key_prandex = &data_key_randex[0];
+	//int32x4_t *data_key_prand = data_key + VERUS_KEY_SIZE128 ;
+	//int32x4_t *data_key_prandex = data_key + VERUS_KEY_SIZE128 + 32;
 
 	uint32_t nonce_buf = 0;
 	uint16_t fixrand[32] __attribute__ ((aligned(64)));

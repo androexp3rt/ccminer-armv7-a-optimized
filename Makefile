@@ -120,7 +120,8 @@ am__ccminer_SOURCES_DIST = elist.h miner.h compat.h compat/inttypes.h \
 	pools.cpp util.cpp bench.cpp api.cpp hashlog.cpp stats.cpp \
 	sysinfos.cpp equi/equi-stratum.cpp verus/verusscan.cpp \
 	verus/haraka_portable.c verus/haraka.c \
-	verus/verus_clhash_portable.cpp compat/winansi.c
+	verus/verus_clhash_portable.cpp crypto/aesb.cpp \
+	compat/winansi.c
 am__dirstamp = $(am__leading_dot)dirstamp
 #am__objects_1 = compat/ccminer-winansi.$(OBJEXT)
 am_ccminer_OBJECTS = ccminer-bignum.$(OBJEXT) ccminer-crc32.$(OBJEXT) \
@@ -132,7 +133,8 @@ am_ccminer_OBJECTS = ccminer-bignum.$(OBJEXT) ccminer-crc32.$(OBJEXT) \
 	verus/ccminer-verusscan.$(OBJEXT) \
 	verus/ccminer-haraka_portable.$(OBJEXT) \
 	verus/ccminer-haraka.$(OBJEXT) \
-	verus/ccminer-verus_clhash_portable.$(OBJEXT) $(am__objects_1)
+	verus/ccminer-verus_clhash_portable.$(OBJEXT) \
+	crypto/ccminer-aesb.$(OBJEXT) $(am__objects_1)
 ccminer_OBJECTS = $(am_ccminer_OBJECTS)
 am__DEPENDENCIES_1 =
 ccminer_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -160,6 +162,7 @@ am__depfiles_remade = ./$(DEPDIR)/ccminer-api.Po \
 	./$(DEPDIR)/ccminer-stats.Po ./$(DEPDIR)/ccminer-sysinfos.Po \
 	./$(DEPDIR)/ccminer-util.Po \
 	compat/$(DEPDIR)/ccminer-winansi.Po \
+	crypto/$(DEPDIR)/ccminer-aesb.Po \
 	equi/$(DEPDIR)/ccminer-equi-stratum.Po \
 	verus/$(DEPDIR)/ccminer-haraka.Po \
 	verus/$(DEPDIR)/ccminer-haraka_portable.Po \
@@ -297,9 +300,9 @@ AWK = gawk
 CC = clang
 CCAS = clang
 CCASDEPMODE = depmode=gcc3
-CCASFLAGS = -Rpass=missed-loop-vectorize -Rpass-analysis=loop-vectorize -funroll-loops -finline-functions -O3 -ffinite-loops -ffast-math -D_REENTRANT -falign-functions=16 -fomit-frame-pointer -fpic -pthread -flto -fuse-ld=lld -fno-stack-protector -march=armv7-a -mcpu=cortex-a15 -mtune=cortex-a7 -mfpu=neon-vfpv4 -mllvm -enable-loop-distribute
+CCASFLAGS = -Rpass=missed-loop-vectorize -Rpass-analysis=loop-vectorize -funroll-loops -finline-functions -O3 -ffinite-loops -ffast-math -D_REENTRANT -falign-functions=16 -mllvm -enable-loop-distribute -fomit-frame-pointer -fpic -pthread -flto -fuse-ld=lld -fno-stack-protector -march=armv7-a -mcpu=cortex-a15 -mtune=cortex-a7 -mfpu=neon-vfpv4 -DNO_AES
 CCDEPMODE = depmode=gcc3
-CFLAGS = -Rpass=missed-loop-vectorize -Rpass-analysis=loop-vectorize -funroll-loops -finline-functions -O3 -ffinite-loops -ffast-math -D_REENTRANT -falign-functions=16 -fomit-frame-pointer -fpic -pthread -flto -fuse-ld=lld -fno-stack-protector -march=armv7-a -mcpu=cortex-a15 -mtune=cortex-a7 -mfpu=neon-vfpv4 -mllvm -enable-loop-distribute
+CFLAGS = -Rpass=missed-loop-vectorize -Rpass-analysis=loop-vectorize -funroll-loops -finline-functions -O3 -ffinite-loops -ffast-math -D_REENTRANT -falign-functions=16 -mllvm -enable-loop-distribute -fomit-frame-pointer -fpic -pthread -flto -fuse-ld=lld -fno-stack-protector -march=armv7-a -mcpu=cortex-a15 -mtune=cortex-a7 -mfpu=neon-vfpv4 -DNO_AES
 CPP = clang -E
 CPPFLAGS = 
 CSCOPE = cscope
@@ -310,7 +313,7 @@ CUDA_LDFLAGS = -L/usr/local/cuda/lib
 CUDA_LIBS = -lcudart -static-libstdc++
 CXX = clang++
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -Rpass=missed-loop-vectorize -Rpass-analysis=loop-vectorize -funroll-loops -finline-functions -O3 -ffinite-loops -ffast-math -D_REENTRANT -falign-functions=16 -fomit-frame-pointer -fpic -pthread -flto -fuse-ld=lld -fno-stack-protector -march=armv7-a -mcpu=cortex-a15 -mtune=cortex-a7 -mfpu=neon-vfpv4 -mllvm -enable-loop-distribute
+CXXFLAGS = -Rpass=missed-loop-vectorize -Rpass-analysis=loop-vectorize -funroll-loops -finline-functions -O3 -ffinite-loops -ffast-math -D_REENTRANT -falign-functions=16 -mllvm -enable-loop-distribute -fomit-frame-pointer -fpic -pthread -flto -fuse-ld=lld -fno-stack-protector -march=armv7-a -mcpu=cortex-a15 -mtune=cortex-a7 -mfpu=neon-vfpv4 -DNO_AES
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -428,7 +431,8 @@ ccminer_SOURCES = elist.h miner.h compat.h compat/inttypes.h \
 	pools.cpp util.cpp bench.cpp api.cpp hashlog.cpp stats.cpp \
 	sysinfos.cpp equi/equi-stratum.cpp verus/verusscan.cpp \
 	verus/haraka_portable.c verus/haraka.c \
-	verus/verus_clhash_portable.cpp $(am__append_1)
+	verus/verus_clhash_portable.cpp crypto/aesb.cpp \
+	$(am__append_1)
 ccminer_LDFLAGS = $(PTHREAD_FLAGS) $(am__append_3)
 ccminer_LDADD = -L/data/data/com.termux/files/usr/lib -lcurl -ljansson -lpthread  \
 	-fopenmp -lcrypto -lssl -lz  $(am__append_4)
@@ -553,6 +557,14 @@ verus/ccminer-haraka.$(OBJEXT): verus/$(am__dirstamp) \
 	verus/$(DEPDIR)/$(am__dirstamp)
 verus/ccminer-verus_clhash_portable.$(OBJEXT): verus/$(am__dirstamp) \
 	verus/$(DEPDIR)/$(am__dirstamp)
+crypto/$(am__dirstamp):
+	@$(MKDIR_P) crypto
+	@: >>crypto/$(am__dirstamp)
+crypto/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) crypto/$(DEPDIR)
+	@: >>crypto/$(DEPDIR)/$(am__dirstamp)
+crypto/ccminer-aesb.$(OBJEXT): crypto/$(am__dirstamp) \
+	crypto/$(DEPDIR)/$(am__dirstamp)
 compat/$(am__dirstamp):
 	@$(MKDIR_P) compat
 	@: >>compat/$(am__dirstamp)
@@ -569,6 +581,7 @@ ccminer$(EXEEXT): $(ccminer_OBJECTS) $(ccminer_DEPENDENCIES) $(EXTRA_ccminer_DEP
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f compat/*.$(OBJEXT)
+	-rm -f crypto/*.$(OBJEXT)
 	-rm -f equi/*.$(OBJEXT)
 	-rm -f verus/*.$(OBJEXT)
 
@@ -586,6 +599,7 @@ include ./$(DEPDIR)/ccminer-stats.Po # am--include-marker
 include ./$(DEPDIR)/ccminer-sysinfos.Po # am--include-marker
 include ./$(DEPDIR)/ccminer-util.Po # am--include-marker
 include compat/$(DEPDIR)/ccminer-winansi.Po # am--include-marker
+include crypto/$(DEPDIR)/ccminer-aesb.Po # am--include-marker
 include equi/$(DEPDIR)/ccminer-equi-stratum.Po # am--include-marker
 include verus/$(DEPDIR)/ccminer-haraka.Po # am--include-marker
 include verus/$(DEPDIR)/ccminer-haraka_portable.Po # am--include-marker
@@ -853,6 +867,20 @@ verus/ccminer-verus_clhash_portable.obj: verus/verus_clhash_portable.cpp
 #	$(AM_V_CXX)source='verus/verus_clhash_portable.cpp' object='verus/ccminer-verus_clhash_portable.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ccminer_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o verus/ccminer-verus_clhash_portable.obj `if test -f 'verus/verus_clhash_portable.cpp'; then $(CYGPATH_W) 'verus/verus_clhash_portable.cpp'; else $(CYGPATH_W) '$(srcdir)/verus/verus_clhash_portable.cpp'; fi`
+
+crypto/ccminer-aesb.o: crypto/aesb.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ccminer_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT crypto/ccminer-aesb.o -MD -MP -MF crypto/$(DEPDIR)/ccminer-aesb.Tpo -c -o crypto/ccminer-aesb.o `test -f 'crypto/aesb.cpp' || echo '$(srcdir)/'`crypto/aesb.cpp
+	$(AM_V_at)$(am__mv) crypto/$(DEPDIR)/ccminer-aesb.Tpo crypto/$(DEPDIR)/ccminer-aesb.Po
+#	$(AM_V_CXX)source='crypto/aesb.cpp' object='crypto/ccminer-aesb.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ccminer_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o crypto/ccminer-aesb.o `test -f 'crypto/aesb.cpp' || echo '$(srcdir)/'`crypto/aesb.cpp
+
+crypto/ccminer-aesb.obj: crypto/aesb.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ccminer_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT crypto/ccminer-aesb.obj -MD -MP -MF crypto/$(DEPDIR)/ccminer-aesb.Tpo -c -o crypto/ccminer-aesb.obj `if test -f 'crypto/aesb.cpp'; then $(CYGPATH_W) 'crypto/aesb.cpp'; else $(CYGPATH_W) '$(srcdir)/crypto/aesb.cpp'; fi`
+	$(AM_V_at)$(am__mv) crypto/$(DEPDIR)/ccminer-aesb.Tpo crypto/$(DEPDIR)/ccminer-aesb.Po
+#	$(AM_V_CXX)source='crypto/aesb.cpp' object='crypto/ccminer-aesb.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ccminer_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o crypto/ccminer-aesb.obj `if test -f 'crypto/aesb.cpp'; then $(CYGPATH_W) 'crypto/aesb.cpp'; else $(CYGPATH_W) '$(srcdir)/crypto/aesb.cpp'; fi`
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
@@ -1192,6 +1220,8 @@ distclean-generic:
 	-test . = "$(srcdir)" || $(am__rm_f) $(CONFIG_CLEAN_VPATH_FILES)
 	-$(am__rm_f) compat/$(DEPDIR)/$(am__dirstamp)
 	-$(am__rm_f) compat/$(am__dirstamp)
+	-$(am__rm_f) crypto/$(DEPDIR)/$(am__dirstamp)
+	-$(am__rm_f) crypto/$(am__dirstamp)
 	-$(am__rm_f) equi/$(DEPDIR)/$(am__dirstamp)
 	-$(am__rm_f) equi/$(am__dirstamp)
 	-$(am__rm_f) verus/$(DEPDIR)/$(am__dirstamp)
@@ -1217,6 +1247,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/ccminer-sysinfos.Po
 	-rm -f ./$(DEPDIR)/ccminer-util.Po
 	-rm -f compat/$(DEPDIR)/ccminer-winansi.Po
+	-rm -f crypto/$(DEPDIR)/ccminer-aesb.Po
 	-rm -f equi/$(DEPDIR)/ccminer-equi-stratum.Po
 	-rm -f verus/$(DEPDIR)/ccminer-haraka.Po
 	-rm -f verus/$(DEPDIR)/ccminer-haraka_portable.Po
@@ -1280,6 +1311,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/ccminer-sysinfos.Po
 	-rm -f ./$(DEPDIR)/ccminer-util.Po
 	-rm -f compat/$(DEPDIR)/ccminer-winansi.Po
+	-rm -f crypto/$(DEPDIR)/ccminer-aesb.Po
 	-rm -f equi/$(DEPDIR)/ccminer-equi-stratum.Po
 	-rm -f verus/$(DEPDIR)/ccminer-haraka.Po
 	-rm -f verus/$(DEPDIR)/ccminer-haraka_portable.Po

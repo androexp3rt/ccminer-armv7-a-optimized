@@ -1,59 +1,53 @@
 /* ccminer-config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
-   systems. This function is required for `alloca.c' support on those systems.
-   */
-#undef CRAY_STACKSEG_END
-
-/* Define to 1 if using `alloca.c'. */
+/* Define to 1 if using 'alloca.c'. */
 #undef C_ALLOCA
 
-/* Define to 1 if you have `alloca', as a function or macro. */
+/* Define to 1 if you have 'alloca', as a function or macro. */
 #undef HAVE_ALLOCA
 
-/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
-   */
+/* Define to 1 if <alloca.h> works. */
 #undef HAVE_ALLOCA_H
 
-/* Define to 1 if you have the declaration of `be32dec', and to 0 if you
+/* Define to 1 if you have the declaration of 'be32dec', and to 0 if you
    don't. */
 #undef HAVE_DECL_BE32DEC
 
-/* Define to 1 if you have the declaration of `be32enc', and to 0 if you
+/* Define to 1 if you have the declaration of 'be32enc', and to 0 if you
    don't. */
 #undef HAVE_DECL_BE32ENC
 
-/* Define to 1 if you have the declaration of `le32dec', and to 0 if you
+/* Define to 1 if you have the declaration of 'le32dec', and to 0 if you
    don't. */
 #undef HAVE_DECL_LE32DEC
 
-/* Define to 1 if you have the declaration of `le32enc', and to 0 if you
+/* Define to 1 if you have the declaration of 'le32enc', and to 0 if you
    don't. */
 #undef HAVE_DECL_LE32ENC
 
-/* Define to 1 if you have the `getopt_long' function. */
+/* Define to 1 if you have the 'getopt_long' function. */
 #undef HAVE_GETOPT_LONG
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the `crypto' library (-lcrypto). */
+/* Define to 1 if you have the 'crypto' library (-lcrypto). */
 #undef HAVE_LIBCRYPTO
 
 /* Define to 1 if you have a functional curl library. */
 #undef HAVE_LIBCURL
 
-/* Define to 1 if you have the `ssl' library (-lssl). */
+/* Define to 1 if you have the 'ssl' library (-lssl). */
 #undef HAVE_LIBSSL
 
-/* Define to 1 if you have the `z' library (-lz). */
+/* Define to 1 if you have the 'z' library (-lz). */
 #undef HAVE_LIBZ
-
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -177,7 +171,9 @@
 	STACK_DIRECTION = 0 => direction of growth unknown */
 #undef STACK_DIRECTION
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
 /* Version number of package */
@@ -186,5 +182,5 @@
 /* Define curl_free() as free() if our version of curl lacks curl_free. */
 #undef curl_free
 
-/* Define to `unsigned int' if <sys/types.h> does not define. */
+/* Define as 'unsigned int' if <stddef.h> doesn't define. */
 #undef size_t

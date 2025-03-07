@@ -186,9 +186,9 @@ AWK = gawk
 CC = clang
 CCAS = clang
 CCASDEPMODE = depmode=gcc3
-CCASFLAGS = -Rpass=missed-loop-vectorize -Rpass-analysis=loop-vectorize -funroll-loops -finline-functions -O3 -ffinite-loops -ffast-math -D_REENTRANT -falign-functions=16 -fomit-frame-pointer -fpic -pthread -flto -fuse-ld=lld -fno-stack-protector -march=armv7-a -mcpu=cortex-a15 -mtune=cortex-a7 -mfpu=neon-vfpv4 -mllvm -enable-loop-distribute
+CCASFLAGS = -Rpass=missed-loop-vectorize -Rpass-analysis=loop-vectorize -funroll-loops -finline-functions -O3 -ffinite-loops -ffast-math -D_REENTRANT -falign-functions=16 -mllvm -enable-loop-distribute -fomit-frame-pointer -fpic -pthread -flto -fuse-ld=lld -fno-stack-protector -march=armv7-a -mcpu=cortex-a15 -mtune=cortex-a7 -mfpu=neon-vfpv4 -DNO_AES
 CCDEPMODE = depmode=gcc3
-CFLAGS = -Rpass=missed-loop-vectorize -Rpass-analysis=loop-vectorize -funroll-loops -finline-functions -O3 -ffinite-loops -ffast-math -D_REENTRANT -falign-functions=16 -fomit-frame-pointer -fpic -pthread -flto -fuse-ld=lld -fno-stack-protector -march=armv7-a -mcpu=cortex-a15 -mtune=cortex-a7 -mfpu=neon-vfpv4 -mllvm -enable-loop-distribute
+CFLAGS = -Rpass=missed-loop-vectorize -Rpass-analysis=loop-vectorize -funroll-loops -finline-functions -O3 -ffinite-loops -ffast-math -D_REENTRANT -falign-functions=16 -mllvm -enable-loop-distribute -fomit-frame-pointer -fpic -pthread -flto -fuse-ld=lld -fno-stack-protector -march=armv7-a -mcpu=cortex-a15 -mtune=cortex-a7 -mfpu=neon-vfpv4 -DNO_AES
 CPP = clang -E
 CPPFLAGS = 
 CSCOPE = cscope
@@ -199,7 +199,7 @@ CUDA_LDFLAGS = -L/usr/local/cuda/lib
 CUDA_LIBS = -lcudart -static-libstdc++
 CXX = clang++
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -Rpass=missed-loop-vectorize -Rpass-analysis=loop-vectorize -funroll-loops -finline-functions -O3 -ffinite-loops -ffast-math -D_REENTRANT -falign-functions=16 -fomit-frame-pointer -fpic -pthread -flto -fuse-ld=lld -fno-stack-protector -march=armv7-a -mcpu=cortex-a15 -mtune=cortex-a7 -mfpu=neon-vfpv4 -mllvm -enable-loop-distribute
+CXXFLAGS = -Rpass=missed-loop-vectorize -Rpass-analysis=loop-vectorize -funroll-loops -finline-functions -O3 -ffinite-loops -ffast-math -D_REENTRANT -falign-functions=16 -mllvm -enable-loop-distribute -fomit-frame-pointer -fpic -pthread -flto -fuse-ld=lld -fno-stack-protector -march=armv7-a -mcpu=cortex-a15 -mtune=cortex-a7 -mfpu=neon-vfpv4 -DNO_AES
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps

@@ -121,25 +121,25 @@ int eq_blake2b_init_key(blake2b_state *S, const uint8_t outlen, const void *key,
 
 static inline int blake2b_compress(blake2b_state *S, const uint8_t block[BLAKE2B_BLOCKBYTES])
 {
-	__m128i row1l, row1h;
-	__m128i row2l, row2h;
-	__m128i row3l, row3h;
-	__m128i row4l, row4h;
-	__m128i b0, b1;
-	__m128i t0, t1;
+	int32x4_t row1l, row1h;
+	int32x4_t row2l, row2h;
+	int32x4_t row3l, row3h;
+	int32x4_t row4l, row4h;
+	int32x4_t b0, b1;
+	int32x4_t t0, t1;
 #if defined(HAVE_SSSE3) && !defined(HAVE_XOP)
-	const __m128i r16 = _mm_setr_epi8(2, 3, 4, 5, 6, 7, 0, 1, 10, 11, 12, 13, 14, 15, 8, 9);
-	const __m128i r24 = _mm_setr_epi8(3, 4, 5, 6, 7, 0, 1, 2, 11, 12, 13, 14, 15, 8, 9, 10);
+	const int32x4_t r16 = _mm_setr_epi8(2, 3, 4, 5, 6, 7, 0, 1, 10, 11, 12, 13, 14, 15, 8, 9);
+	const int32x4_t r24 = _mm_setr_epi8(3, 4, 5, 6, 7, 0, 1, 2, 11, 12, 13, 14, 15, 8, 9, 10);
 #endif
 #if defined(HAVE_SSE41)
-	const __m128i m0 = LOADU(block + 00);
-	const __m128i m1 = LOADU(block + 16);
-	const __m128i m2 = LOADU(block + 32);
-	const __m128i m3 = LOADU(block + 48);
-	const __m128i m4 = LOADU(block + 64);
-	const __m128i m5 = LOADU(block + 80);
-	const __m128i m6 = LOADU(block + 96);
-	const __m128i m7 = LOADU(block + 112);
+	const int32x4_t m0 = LOADU(block + 00);
+	const int32x4_t m1 = LOADU(block + 16);
+	const int32x4_t m2 = LOADU(block + 32);
+	const int32x4_t m3 = LOADU(block + 48);
+	const int32x4_t m4 = LOADU(block + 64);
+	const int32x4_t m5 = LOADU(block + 80);
+	const int32x4_t m6 = LOADU(block + 96);
+	const int32x4_t m7 = LOADU(block + 112);
 #else
 	const uint64_t  m0 = ( ( uint64_t * )block )[ 0];
 	const uint64_t  m1 = ( ( uint64_t * )block )[ 1];

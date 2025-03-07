@@ -19,4 +19,4 @@
 
 #include "sse2neon.h"
 uint64_t verusclhash_port2_1(void * random, const unsigned char buf[64], uint64_t keyMask, uint16_t *  __restrict fixrand, uint16_t * __restrict fixrandex);
-uint64_t verusclhash_port2_2(void * random, const unsigned char buf[64], uint64_t keyMask, uint16_t *  __restrict fixrand, uint16_t * __restrict fixrandex, __m128i *g_prand, __m128i *g_prandex);
+uint64_t verusclhash_port2_2(void * random, const unsigned char buf[64], uint64_t keyMask, uint16_t *  __restrict fixrand, uint16_t * __restrict fixrandex, int32x4_t *g_prand, int32x4_t *g_prandex);

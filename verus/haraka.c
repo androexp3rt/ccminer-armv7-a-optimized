@@ -38,9 +38,9 @@ typedef unsigned int uint32_t;
 
 
 
-void haraka512_keyed(unsigned char *out, const unsigned char *in, const __m128i *rc) {
-  __m128i  tmp, t[4];
-  //__m128i tmp;
+void haraka512_keyed(unsigned char *out, const unsigned char *in, const int32x4_t *rc) {
+  int32x4_t  tmp, t[4];
+  //int32x4_t tmp;
 
   struct int64x2x4_t s;
   struct int64x2x4_t n;

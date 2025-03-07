@@ -36,7 +36,7 @@ typedef unsigned long long u64;
 #else
 typedef unsigned long u64;
 #endif
-typedef __m128i u128;
+typedef int32x4_t u128;
 
 //extern u128 rc[40];
 
@@ -198,9 +198,9 @@ typedef unsigned long long u64;
 #else
 typedef unsigned long u64;
 #endif
-typedef __m128i u128;
+typedef int32x4_t u128;
 
-extern __m128i rc[40];
+extern int32x4_t rc[40];
 
 #define LOAD(src) _mm_load_si128((u128 *)(src))
 #define STORE(dest,src) _mm_storeu_si128((u128 *)(dest),src)

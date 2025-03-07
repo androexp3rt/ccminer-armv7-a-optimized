@@ -4,7 +4,7 @@
 //#include "immintrin.h"
 #include "sse2neon.h"
 #include "arm_neon.h"
-// typedef int32x4_t __m128i;
+// typedef int32x4_t int32x4_t;
 
 #define NUMROUNDS 5
 
@@ -24,7 +24,7 @@ void aesenc(unsigned char *s, const unsigned char *rk) ;
 
 typedef unsigned int uint32_t;
 
-static inline __m128i _mm_unpacklo_epi32_emu(__m128i a, __m128i b)
+static inline int32x4_t _mm_unpacklo_epi32_emu(int32x4_t a, int32x4_t b)
 {
     uint32_t result[4];
     uint32_t *tmp1 = (uint32_t *)&a, *tmp2 = (uint32_t *)&b;
@@ -32,10 +32,10 @@ static inline __m128i _mm_unpacklo_epi32_emu(__m128i a, __m128i b)
     result[1] = tmp2[0];
     result[2] = tmp1[1];
     result[3] = tmp2[1];
-    return *(__m128i *)result;
+    return *(int32x4_t *)result;
 }
 
-static inline __m128i _mm_unpackhi_epi32_emu(__m128i a, __m128i b)
+static inline int32x4_t _mm_unpackhi_epi32_emu(int32x4_t a, int32x4_t b)
 {
     uint32_t result[4];
     uint32_t *tmp1 = (uint32_t *)&a, *tmp2 = (uint32_t *)&b;
@@ -43,7 +43,7 @@ static inline __m128i _mm_unpackhi_epi32_emu(__m128i a, __m128i b)
     result[1] = tmp2[2];
     result[2] = tmp1[3];
     result[3] = tmp2[3];
-    return *(__m128i *)result;
+    return *(int32x4_t *)result;
 }
 
 #define MIX2_EMU1(s0, s1) \
@@ -114,7 +114,7 @@ void haraka512_perm(unsigned char *out, const unsigned char *in);
 void haraka512_port(unsigned char *out, const unsigned char *in);
 
 /* Implementation of Haraka-512 */
-void haraka512_port_keyed(unsigned char *out, const unsigned char *in, const __m128i *rc);
+void haraka512_port_keyed(unsigned char *out, const unsigned char *in, const int32x4_t *rc);
 
 /* Applies the 512-bit Haraka permutation to in, using zero key. */
 void haraka512_perm_zero(unsigned char *out, const unsigned char *in);

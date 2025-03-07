@@ -124,12 +124,12 @@ typedef union __EMU_M256_ALIGN(32) __emu__m256d
 typedef union __EMU_M256_ALIGN(32) __emu__m256i
 {
     int         __emu_arr[8];
-    __m128i     __emu_m128[2];
+    int32x4_t     __emu_m128[2];
 } __emu__m256i;
 
 static __emu_inline __emu__m256  __emu_set_m128( const __m128 arr[] ) { __emu__m256 ret;  ret.__emu_m128[0] = arr[0]; ret.__emu_m128[1] = arr[1]; return (ret); }
 static __emu_inline __emu__m256d __emu_set_m128d( const __m128d arr[] ) { __emu__m256d ret; ret.__emu_m128[0] = arr[0]; ret.__emu_m128[1] = arr[1]; return (ret); }
-static __emu_inline __emu__m256i __emu_set_m128i( const __m128i arr[] ) { __emu__m256i ret; ret.__emu_m128[0] = arr[0]; ret.__emu_m128[1] = arr[1]; return (ret); }
+static __emu_inline __emu__m256i __emu_set_m128i( const int32x4_t arr[] ) { __emu__m256i ret; ret.__emu_m128[0] = arr[0]; ret.__emu_m128[1] = arr[1]; return (ret); }
 
 
 #define __EMU_M256_IMPL_M1( type, func ) \
@@ -511,23 +511,23 @@ static __emu_inline __m128 __emu_mm_cmp_ss(__m128 m1, __m128 m2, const int predi
 #endif
 
 
-__EMU_M256_IMPL_M1_LH( __m256d, __m128i, cvtepi32_pd );
+__EMU_M256_IMPL_M1_LH( __m256d, int32x4_t, cvtepi32_pd );
 __EMU_M256_IMPL_M1_RET( __m256, __m256i, cvtepi32_ps );
 __EMU_M256_IMPL_M1_HL( __m128, __m256d, cvtpd_ps );
 __EMU_M256_IMPL_M1_RET( __m256i, __m256, cvtps_epi32 );
 __EMU_M256_IMPL_M1_LH( __m256d, __m128, cvtps_pd );
-__EMU_M256_IMPL_M1_HL( __m128i, __m256d, cvttpd_epi32);
-__EMU_M256_IMPL_M1_HL( __m128i, __m256d, cvtpd_epi32);
+__EMU_M256_IMPL_M1_HL( int32x4_t, __m256d, cvttpd_epi32);
+__EMU_M256_IMPL_M1_HL( int32x4_t, __m256d, cvtpd_epi32);
 __EMU_M256_IMPL_M1_RET( __m256i, __m256, cvttps_epi32 );
 
 static __emu_inline __m128  __emu_mm256_extractf128_ps(__emu__m256 m1, const int offset) { return m1.__emu_m128[ offset ]; }
 static __emu_inline __m128d __emu_mm256_extractf128_pd(__emu__m256d m1, const int offset) { return m1.__emu_m128[ offset ]; }
-static __emu_inline __m128i __emu_mm256_extractf128_si256(__emu__m256i m1, const int offset) { return m1.__emu_m128[ offset ]; }
+static __emu_inline int32x4_t __emu_mm256_extractf128_si256(__emu__m256i m1, const int offset) { return m1.__emu_m128[ offset ]; }
 
 static __emu_inline void __emu_mm256_zeroall(void) {}
 static __emu_inline void __emu_mm256_zeroupper(void) {}
 
-static __emu_inline __m128  __emu_mm_permutevar_ps(__m128 a, __m128i control)
+static __emu_inline __m128  __emu_mm_permutevar_ps(__m128 a, int32x4_t control)
 {
     int const* sel = (int const*)&control;
     float const* src = (float const*)&a;
@@ -541,11 +541,11 @@ static __emu_inline __m128  __emu_mm_permutevar_ps(__m128 a, __m128i control)
 }
 __EMU_M256_IMPL2_M2T( __m256, __m256i, permutevar_ps );
 
-static __emu_inline __m128  __emu_mm_permute_ps(__m128 a, int control) { return _mm_castsi128_ps( _mm_shuffle_epi32( *(__m128i*)&a, control ) ); }
+static __emu_inline __m128  __emu_mm_permute_ps(__m128 a, int control) { return _mm_castsi128_ps( _mm_shuffle_epi32( *(int32x4_t*)&a, control ) ); }
 __EMU_M256_IMPL2_M1I_DUP( __m256, permute_ps );
 
 
-static __emu_inline __m128d __emu_mm_permutevar_pd(__m128d a, __m128i control)
+static __emu_inline __m128d __emu_mm_permutevar_pd(__m128d a, int32x4_t control)
 {
     __emu_int64_t const* sel = (__emu_int64_t const*)&control;
     double const* src = (double const*)&a;
@@ -585,7 +585,7 @@ static __emu_inline m256_type name( m256_type m1, m256_type m2, int control) { \
 
 __emu_mm256_permute2f128_impl( __emu_mm256_permute2f128_ps, __m128, __emu__m256 );
 __emu_mm256_permute2f128_impl( __emu_mm256_permute2f128_pd, __m128d, __emu__m256d );
-__emu_mm256_permute2f128_impl( __emu_mm256_permute2f128_si256, __m128i, __emu__m256i );
+__emu_mm256_permute2f128_impl( __emu_mm256_permute2f128_si256, int32x4_t, __emu__m256i );
 
 
 #define __emu_mm_broadcast_impl( name, res_type, type )     \
@@ -610,7 +610,7 @@ __emu_mm_broadcast_impl( __emu_mm256_broadcast_pd, __emu__m256d, __m128d )
 
 static __emu_inline __emu__m256  __emu_mm256_insertf128_ps(__emu__m256 a, __m128 b, int offset)  { a.__emu_m128[ offset ] = b; return a; }
 static __emu_inline __emu__m256d __emu_mm256_insertf128_pd(__emu__m256d a, __m128d b, int offset)  { a.__emu_m128[ offset ] = b; return a; }
-static __emu_inline __emu__m256i __emu_mm256_insertf128_si256(__emu__m256i a, __m128i b, int offset)  { a.__emu_m128[ offset ] = b; return a; }
+static __emu_inline __emu__m256i __emu_mm256_insertf128_si256(__emu__m256i a, int32x4_t b, int offset)  { a.__emu_m128[ offset ] = b; return a; }
 
 
 #define __emu_mm_load_impl( name, sfx, m256_sfx, m256_type, type_128, type )           \
@@ -639,11 +639,11 @@ __emu_mm_store_impl( storeu, pd, pd, __m256d, double, double );
 __emu_mm_load_impl( loadu, ps, ps, __m256, float, float );
 __emu_mm_store_impl( storeu, ps, ps, __m256, float, float );
 
-__emu_mm_load_impl( load, si128, si256, __m256i, __m128i, __emu__m256i );
-__emu_mm_store_impl( store, si128, si256, __m256i, __m128i, __emu__m256i );
+__emu_mm_load_impl( load, si128, si256, __m256i, int32x4_t, __emu__m256i );
+__emu_mm_store_impl( store, si128, si256, __m256i, int32x4_t, __emu__m256i );
 
-__emu_mm_load_impl( loadu, si128, si256, __m256i, __m128i, __emu__m256i );
-__emu_mm_store_impl( storeu, si128, si256, __m256i, __m128i, __emu__m256i );
+__emu_mm_load_impl( loadu, si128, si256, __m256i, int32x4_t, __emu__m256i );
+__emu_mm_store_impl( storeu, si128, si256, __m256i, int32x4_t, __emu__m256i );
 
 
 #define __emu_maskload_impl( name, vec_type, mask_vec_type, type, mask_type ) \
@@ -677,23 +677,23 @@ static __emu_inline void  name(type *a, mask_vec_type mask, vec_type data) { \
 __emu_maskload_impl( __emu_mm256_maskload_pd, __emu__m256d, __emu__m256i, double, __emu_int64_t );
 __emu_maskstore_impl( __emu_mm256_maskstore_pd, __emu__m256d, __emu__m256i, double, __emu_int64_t );
 
-__emu_maskload_impl( __emu_mm_maskload_pd, __m128d, __m128i, double, __emu_int64_t );
-__emu_maskstore_impl( __emu_mm_maskstore_pd, __m128d, __m128i, double, __emu_int64_t );
+__emu_maskload_impl( __emu_mm_maskload_pd, __m128d, int32x4_t, double, __emu_int64_t );
+__emu_maskstore_impl( __emu_mm_maskstore_pd, __m128d, int32x4_t, double, __emu_int64_t );
 
 __emu_maskload_impl( __emu_mm256_maskload_ps, __emu__m256, __emu__m256i, float, int );
 __emu_maskstore_impl( __emu_mm256_maskstore_ps, __emu__m256, __emu__m256i, float, int );
 
-__emu_maskload_impl( __emu_mm_maskload_ps, __m128, __m128i, float, int );
-__emu_maskstore_impl( __emu_mm_maskstore_ps, __m128, __m128i, float, int );
+__emu_maskload_impl( __emu_mm_maskload_ps, __m128, int32x4_t, float, int );
+__emu_maskstore_impl( __emu_mm_maskstore_ps, __m128, int32x4_t, float, int );
 
 
 __EMU_M256_IMPL_M1( __m256, movehdup_ps );
 __EMU_M256_IMPL_M1( __m256, moveldup_ps );
 __EMU_M256_IMPL_M1( __m256d, movedup_pd );
 
-__emu_mm_load_impl( lddqu, si128, si256, __m256i, __m128i, __emu__m256i );
+__emu_mm_load_impl( lddqu, si128, si256, __m256i, int32x4_t, __emu__m256i );
 
-__emu_mm_store_impl( stream, si128, si256, __m256i, __m128i, __emu__m256i );
+__emu_mm_store_impl( stream, si128, si256, __m256i, int32x4_t, __emu__m256i );
 __emu_mm_store_impl( stream, pd, pd, __m256d, double, double );
 __emu_mm_store_impl( stream, ps, ps, __m256, float, float );
 
@@ -726,7 +726,7 @@ static __emu_inline int     __emu_mm256_movemask_ps(__emu__m256 a)
 
 static __emu_inline __emu__m256d __emu_mm256_setzero_pd(void) { __m128d ret[2] = { _mm_setzero_pd(), _mm_setzero_pd() }; return __emu_set_m128d( ret ); }
 static __emu_inline __emu__m256  __emu_mm256_setzero_ps(void) { __m128  ret[2] = { _mm_setzero_ps(), _mm_setzero_ps() }; return __emu_set_m128( ret ); }
-static __emu_inline __emu__m256i __emu_mm256_setzero_si256(void) { __m128i ret[2] = { _mm_setzero_si128(), _mm_setzero_si128() }; return __emu_set_m128i( ret ); }
+static __emu_inline __emu__m256i __emu_mm256_setzero_si256(void) { int32x4_t ret[2] = { _mm_setzero_si128(), _mm_setzero_si128() }; return __emu_set_m128i( ret ); }
 
 static __emu_inline __emu__m256d __emu_mm256_set_pd(double a1, double a2, double a3, double a4)
 { __m128d ret[2] = { _mm_set_pd( a3, a4 ), _mm_set_pd( a1, a2 ) }; return __emu_set_m128d( ret ); }
@@ -738,25 +738,25 @@ static __emu_inline __emu__m256i __emu_mm256_set_epi8(char a1, char a2, char a3,
                                        char a9, char a10, char a11, char a12, char a13, char a14, char a15, char a16,
                                        char a17, char a18, char a19, char a20, char a21, char a22, char a23, char a24,
                                        char a25, char a26, char a27, char a28, char a29, char a30, char a31, char a32)
-{   __m128i ret[2] = { _mm_set_epi8( a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32 ), 
+{   int32x4_t ret[2] = { _mm_set_epi8( a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32 ), 
                        _mm_set_epi8( a1,   a2,  a3,  a4,  a5,  a6,  a7,  a8,  a9, a10, a11, a12, a13, a14, a15, a16 ) }; 
     return __emu_set_m128i( ret ); 
 }
 
 static __emu_inline __emu__m256i __emu_mm256_set_epi16(short a1, short a2, short a3, short a4, short a5, short a6, short a7, short a8,
                                                        short a9, short a10, short a11, short a12, short a13, short a14, short a15, short a16)
-{   __m128i ret[2] = { _mm_set_epi16( a9, a10, a11, a12, a13, a14, a15, a16 ), 
+{   int32x4_t ret[2] = { _mm_set_epi16( a9, a10, a11, a12, a13, a14, a15, a16 ), 
                        _mm_set_epi16( a1,  a2,  a3,  a4,  a5,  a6,  a7,  a8 ) }; 
     return __emu_set_m128i( ret );
 }
 
 static __emu_inline __emu__m256i __emu_mm256_set_epi32(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8)
-{ __m128i ret[2] = { _mm_set_epi32( a5, a6, a7, a8 ), _mm_set_epi32( a1, a2, a3, a4 ) }; return __emu_set_m128i( ret ); }
+{ int32x4_t ret[2] = { _mm_set_epi32( a5, a6, a7, a8 ), _mm_set_epi32( a1, a2, a3, a4 ) }; return __emu_set_m128i( ret ); }
 
-static __emu_inline __m128i __emu_mm_set_epi64x( __emu_int64_t a, __emu_int64_t b ) { return _mm_set_epi64( *(__m64*)&a, *(__m64*)&b ); }
+static __emu_inline int32x4_t __emu_mm_set_epi64x( __emu_int64_t a, __emu_int64_t b ) { return _mm_set_epi64( *(__m64*)&a, *(__m64*)&b ); }
 
 static __emu_inline __emu__m256i __emu_mm256_set_epi64x(__emu_int64_t a1, __emu_int64_t a2, __emu_int64_t a3, __emu_int64_t a4)
-{ __m128i ret[2] = { __emu_mm_set_epi64x( a3, a4 ), __emu_mm_set_epi64x( a1, a2 ) }; return __emu_set_m128i( ret ); }
+{ int32x4_t ret[2] = { __emu_mm_set_epi64x( a3, a4 ), __emu_mm_set_epi64x( a1, a2 ) }; return __emu_set_m128i( ret ); }
 
 
 static __emu_inline __emu__m256d __emu_mm256_setr_pd(double a1, double a2, double a3, double a4)
@@ -769,22 +769,22 @@ static __emu_inline __emu__m256i __emu_mm256_setr_epi8(char a1, char a2, char a3
                                                       char a9, char a10, char a11, char a12, char a13, char a14, char a15, char a16,
                                                       char a17, char a18, char a19, char a20, char a21, char a22, char a23, char a24,
                                                       char a25, char a26, char a27, char a28, char a29, char a30, char a31, char a32)
-{   __m128i ret[2] = { _mm_setr_epi8( a1,   a2,  a3,  a4,  a5,  a6,  a7,  a8,  a9, a10, a11, a12, a13, a14, a15, a16 ),
+{   int32x4_t ret[2] = { _mm_setr_epi8( a1,   a2,  a3,  a4,  a5,  a6,  a7,  a8,  a9, a10, a11, a12, a13, a14, a15, a16 ),
                        _mm_setr_epi8( a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32 ) }; 
     return __emu_set_m128i( ret );
 }
 
 static __emu_inline __emu__m256i __emu_mm256_setr_epi16(short a1, short a2, short a3, short a4, short a5, short a6, short a7, short a8,
                                                        short a9, short a10, short a11, short a12, short a13, short a14, short a15, short a16)
-{   __m128i ret[2] = { _mm_setr_epi16( a1,  a2,  a3,  a4,  a5,  a6,  a7,  a8 ),
+{   int32x4_t ret[2] = { _mm_setr_epi16( a1,  a2,  a3,  a4,  a5,  a6,  a7,  a8 ),
                        _mm_setr_epi16( a9, a10, a11, a12, a13, a14, a15, a16 ) }; return __emu_set_m128i( ret );
 }
 
 static __emu_inline __emu__m256i __emu_mm256_setr_epi32(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8)
-{   __m128i ret[2] = { _mm_setr_epi32( a1, a2, a3, a4 ), _mm_setr_epi32( a5, a6, a7, a8 ),  }; return __emu_set_m128i( ret ); }
+{   int32x4_t ret[2] = { _mm_setr_epi32( a1, a2, a3, a4 ), _mm_setr_epi32( a5, a6, a7, a8 ),  }; return __emu_set_m128i( ret ); }
 
 static __emu_inline __emu__m256i __emu_mm256_setr_epi64x(__emu_int64_t a1, __emu_int64_t a2, __emu_int64_t a3, __emu_int64_t a4)
-{   __m128i ret[2] = { __emu_mm_set_epi64x( a2, a1 ), __emu_mm_set_epi64x( a4, a3 ) }; return __emu_set_m128i( ret ); }
+{   int32x4_t ret[2] = { __emu_mm_set_epi64x( a2, a1 ), __emu_mm_set_epi64x( a4, a3 ) }; return __emu_set_m128i( ret ); }
 
 
 
@@ -817,11 +817,11 @@ __EMU_M256_IMPL_M1_RET_NAME( __m256d, __m256i, castsi128_pd, castsi256_pd );
 
 static __emu_inline __m128  __emu_mm256_castps256_ps128(__emu__m256 a) { return ( a.__emu_m128[0] ); }
 static __emu_inline __m128d __emu_mm256_castpd256_pd128(__emu__m256d a) { return ( a.__emu_m128[0] ); }
-static __emu_inline __m128i __emu_mm256_castsi256_si128(__emu__m256i a) { return ( a.__emu_m128[0] ); }
+static __emu_inline int32x4_t __emu_mm256_castsi256_si128(__emu__m256i a) { return ( a.__emu_m128[0] ); }
 
 static __emu_inline __emu__m256  __emu_mm256_castps128_ps256(__m128 a) { __m128 ret[2] = { a, _mm_setzero_ps() }; return __emu_set_m128( ret ); };
 static __emu_inline __emu__m256d __emu_mm256_castpd128_pd256(__m128d a) { __m128d ret[2] = { a, _mm_setzero_pd() }; return __emu_set_m128d( ret ); };
-static __emu_inline __emu__m256i __emu_mm256_castsi128_si256(__m128i a) { __m128i ret[2] = { a, _mm_setzero_si128() }; return __emu_set_m128i( ret ); };
+static __emu_inline __emu__m256i __emu_mm256_castsi128_si256(int32x4_t a) { int32x4_t ret[2] = { a, _mm_setzero_si128() }; return __emu_set_m128i( ret ); };
 
 #if defined __cplusplus
 }; /* End "C" */

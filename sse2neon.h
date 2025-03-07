@@ -75,6 +75,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <arm_neon.h>
+#include "aesb.h"
 
 /* Architecture-specific build options */
 /* FIXME: #pragma GCC push_options is only available on GCC */

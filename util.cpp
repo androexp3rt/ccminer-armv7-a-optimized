@@ -70,7 +70,7 @@ void* neon_memcpy(void* dest, const void* src, size_t n) {
     void* original_dest = dest;
     
     // For small copies, use standard memcpy
-    if (n < 128) {
+    if (n < 64) {
         return memcpy(dest, src, n);
     }
     
@@ -84,20 +84,42 @@ void* neon_memcpy(void* dest, const void* src, size_t n) {
         n -= align_bytes;
     }
     
-    // Use NEON for bulk copy (16-byte chunks)
-    size_t blocks = n >> 4;
+    // Prefetch source data
+    __builtin_prefetch(src, 0, 3);
+    
+    // Use NEON for bulk copy (32-byte chunks)
+    size_t blocks = n >> 5;
     if (blocks > 0) {
         uint8_t* d = (uint8_t*)dest;
         const uint8_t* s = (const uint8_t*)src;
         
-        for (size_t i = 0; i < blocks; i++, s += 16, d += 16) {
-            uint8x16_t data = vld1q_u8(s);
-            vst1q_u8(d, data);
+        for (size_t i = 0; i < blocks; i++, s += 32, d += 32) {
+            // Load 32 bytes (4 NEON registers)
+            uint8x16_t data1 = vld1q_u8(s);
+            uint8x16_t data2 = vld1q_u8(s + 16);
+            
+            // Store 32 bytes
+            vst1q_u8(d, data1);
+            vst1q_u8(d + 16, data2);
+            
+            // Prefetch next block
+            if (i + 1 < blocks) {
+                __builtin_prefetch(s + 64, 0, 3);
+            }
         }
         
-        dest = (char*)dest + (blocks << 4);
-        src = (char*)src + (blocks << 4);
-        n &= 0xF;
+        dest = (char*)dest + (blocks << 5);
+        src = (char*)src + (blocks << 5);
+        n &= 0x1F;
+    }
+    
+    // Handle 16-byte chunks
+    if (n >= 16) {
+        uint8x16_t data = vld1q_u8((const uint8_t*)src);
+        vst1q_u8((uint8_t*)dest, data);
+        dest = (char*)dest + 16;
+        src = (char*)src + 16;
+        n -= 16;
     }
     
     // Handle remaining bytes
@@ -113,7 +135,7 @@ void* neon_memset(void* dest, int val, size_t n) {
     void* original_dest = dest;
     
     // For small sets, use standard memset
-    if (n < 128) {
+    if (n < 64) {
         return memset(dest, val, n);
     }
     
@@ -126,20 +148,34 @@ void* neon_memset(void* dest, int val, size_t n) {
         n -= align_bytes;
     }
     
-    // Use NEON for bulk set (16-byte chunks)
+    // Use NEON for bulk set (32-byte chunks)
     uint8_t v8 = (uint8_t)val;
     uint8x16_t v = vdupq_n_u8(v8);
     
-    size_t blocks = n >> 4;
+    size_t blocks = n >> 5;
     if (blocks > 0) {
         uint8_t* d = (uint8_t*)dest;
         
-        for (size_t i = 0; i < blocks; i++, d += 16) {
+        for (size_t i = 0; i < blocks; i++, d += 32) {
+            // Store 32 bytes (2 NEON registers)
             vst1q_u8(d, v);
+            vst1q_u8(d + 16, v);
+            
+            // Prefetch next block
+            if (i + 1 < blocks) {
+                __builtin_prefetch(d + 64, 1, 3);
+            }
         }
         
-        dest = (char*)dest + (blocks << 4);
-        n &= 0xF;
+        dest = (char*)dest + (blocks << 5);
+        n &= 0x1F;
+    }
+    
+    // Handle 16-byte chunk
+    if (n >= 16) {
+        vst1q_u8((uint8_t*)dest, v);
+        dest = (char*)dest + 16;
+        n -= 16;
     }
     
     // Handle remaining bytes
@@ -1088,35 +1124,29 @@ bool fulltest(const uint32_t *hash, const uint32_t *target)
 {
 #if defined(__arm__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7 && defined(__ARM_NEON__)
     // Optimized version for ARMv7-A with NEON
-    // Process 2 integers at a time for ARMv7-A
-    
-    // Start from the most significant word (index 7)
     // This is a critical function for mining performance
     
     // Prefetch both arrays for better performance
     __builtin_prefetch(hash, 0, 3);  // Read with high temporal locality
     __builtin_prefetch(target, 0, 3);  // Read with high temporal locality
     
-    // Compare pairs of integers using NEON
-    for (int i = 6; i >= 0; i -= 2) {
+    // Start from the most significant word (index 7)
+    // Compare 2 integers at a time using NEON
+    for (int i = 7; i >= 1; i -= 2) {
         // Load 2 integers from hash and target
-        uint32x2_t hash_vec = vld1_u32(&hash[i]);
-        uint32x2_t target_vec = vld1_u32(&target[i]);
+        uint32x2_t hash_vec = vld1_u32(&hash[i-1]);
+        uint32x2_t target_vec = vld1_u32(&target[i-1]);
         
-        // Compare each element
-        uint32x2_t cmp_gt = vcgt_u32(hash_vec, target_vec);
-        uint32x2_t cmp_lt = vclt_u32(hash_vec, target_vec);
-        
-        // Check the higher word first (i+1)
-        if (vget_lane_u32(cmp_gt, 1)) 
+        // Compare the higher word first (i)
+        if (hash[i] > target[i])
             return false;
-        if (vget_lane_u32(cmp_lt, 1))
+        if (hash[i] < target[i])
             return true;
             
-        // Then check the lower word (i)
-        if (vget_lane_u32(cmp_gt, 0)) 
+        // Then check the lower word (i-1)
+        if (hash[i-1] > target[i-1])
             return false;
-        if (vget_lane_u32(cmp_lt, 0))
+        if (hash[i-1] < target[i-1])
             return true;
     }
     
@@ -1148,8 +1178,8 @@ bool fulltest(const uint32_t *hash, const uint32_t *target)
 // Only used by stratum pools
 void diff_to_target(uint32_t *target, double diff)
 {
-#if defined(__ARM_NEON) || defined(__ARM_NEON__)
-    // Optimized version for ARMv7-A
+#if defined(__arm__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7 && defined(__ARM_NEON__)
+    // Optimized version for ARMv7-A with NEON
     // Calculate k and m more efficiently
     int k;
     uint64_t m;
@@ -1181,14 +1211,19 @@ void diff_to_target(uint32_t *target, double diff)
         }
     } else {
         // For very high difficulty (diff < 1.0)
-        // Use original algorithm
+        // Use original algorithm with NEON optimization
         for (k = 6; k > 0 && diff > 1.0; k--)
             diff /= 4294967296.0;
         m = (uint64_t)(4294901760.0 / diff);
-        if (m == 0 && k == 6)
+        
+        // Clear target with NEON
+        uint32x4_t zero = vdupq_n_u32(0);
+        vst1q_u32(target, zero);
+        vst1q_u32(target + 4, zero);
+        
+        if (m == 0 && k == 6) {
             memset(target, 0xff, 32);
-        else {
-            memset(target, 0, 32);
+        } else {
             target[k] = (uint32_t)m;
             target[k + 1] = (uint32_t)(m >> 32);
         }
@@ -1222,43 +1257,28 @@ void work_set_target(struct work* work, double diff)
 // Only used by longpoll pools
 double target_to_diff(uint32_t* target)
 {
-#if defined(__ARM_NEON) || defined(__ARM_NEON__)
-    // Optimized version for ARMv7-A
-    uchar* tgt = (uchar*)target;
+#if defined(__arm__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7 && defined(__ARM_NEON__)
+    // Optimized version for ARMv7-A with NEON
+    // Prefetch the target for better performance
+    __builtin_prefetch(target, 0, 3);  // Read with high temporal locality
     
     // Check for zero value quickly
-    uint8x16_t zero = vdupq_n_u8(0);
-    uint8x16_t data1 = vld1q_u8(&tgt[0]);
-    uint8x16_t data2 = vld1q_u8(&tgt[16]);
+    uint32x4_t zero = vdupq_n_u32(0);
+    uint32x4_t data1 = vld1q_u32(&target[0]);
+    uint32x4_t data2 = vld1q_u32(&target[4]);
     
     // Compare with zero
-    uint8x16_t cmp1 = vceqq_u8(data1, zero);
-    uint8x16_t cmp2 = vceqq_u8(data2, zero);
+    uint32x4_t cmp1 = vceqq_u32(data1, zero);
+    uint32x4_t cmp2 = vceqq_u32(data2, zero);
     
-    // Check if bytes 22-29 are all zero
-    uint8_t is_zero = 1;
-    for (int i = 22; i <= 29; i++) {
-        if (tgt[i] != 0) {
-            is_zero = 0;
-            break;
-        }
-    }
-    
-    if (is_zero)
+    // Check if bytes 22-29 are all zero (indices 5 and 6)
+    if (target[5] == 0 && target[6] == 0)
         return 0.;
     
-    // Optimized extraction of the 64-bit value
-    uint64_t m = 
-        ((uint64_t)tgt[29] << 56) |
-        ((uint64_t)tgt[28] << 48) |
-        ((uint64_t)tgt[27] << 40) |
-        ((uint64_t)tgt[26] << 32) |
-        ((uint64_t)tgt[25] << 24) |
-        ((uint64_t)tgt[24] << 16) |
-        ((uint64_t)tgt[23] << 8)  |
-        ((uint64_t)tgt[22]);
+    // Extract the 64-bit value efficiently
+    uint64_t m = ((uint64_t)target[6] << 32) | target[5];
     
-    return (double)0x0000ffff00000000/m;
+    return (double)0x0000ffff00000000ULL/m;
 #else
     // Original implementation
     uchar* tgt = (uchar*)target;
@@ -1275,7 +1295,7 @@ double target_to_diff(uint32_t* target)
     if (!m)
         return 0.;
     else
-        return (double)0x0000ffff00000000/m;
+        return (double)0x0000ffff00000000ULL/m;
 #endif
 }
 

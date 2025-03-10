@@ -14,8 +14,12 @@ fi
 
 echo "Found sse2neon.h at: $SSE2NEON_FILE"
 
+# Create a temporary directory in the current folder
+TEMP_DIR="./temp_build"
+mkdir -p "$TEMP_DIR"
+
 # Create a temporary file with the ARM NEON header includes
-cat > /tmp/neon_header.txt << 'EOF'
+cat > "$TEMP_DIR/neon_header.txt" << 'EOF'
 #ifndef SSE2NEON_H
 #define SSE2NEON_H
 
@@ -41,12 +45,12 @@ EOF
 if grep -q "#ifndef SSE2NEON_H" "$SSE2NEON_FILE"; then
     # Replace the existing header guard with our enhanced version
     sed -i '1,/#define SSE2NEON_H/d' "$SSE2NEON_FILE"
-    cat /tmp/neon_header.txt "$SSE2NEON_FILE" > /tmp/fixed_sse2neon.h
-    mv /tmp/fixed_sse2neon.h "$SSE2NEON_FILE"
+    cat "$TEMP_DIR/neon_header.txt" "$SSE2NEON_FILE" > "$TEMP_DIR/fixed_sse2neon.h"
+    cp "$TEMP_DIR/fixed_sse2neon.h" "$SSE2NEON_FILE"
 else
     # Add our header at the beginning of the file
-    cat /tmp/neon_header.txt "$SSE2NEON_FILE" > /tmp/fixed_sse2neon.h
-    mv /tmp/fixed_sse2neon.h "$SSE2NEON_FILE"
+    cat "$TEMP_DIR/neon_header.txt" "$SSE2NEON_FILE" > "$TEMP_DIR/fixed_sse2neon.h"
+    cp "$TEMP_DIR/fixed_sse2neon.h" "$SSE2NEON_FILE"
 fi
 
 # Make sure the file ends with an #endif
@@ -54,6 +58,7 @@ if ! grep -q "#endif.*SSE2NEON_H" "$SSE2NEON_FILE"; then
     echo -e "\n#endif /* SSE2NEON_H */" >> "$SSE2NEON_FILE"
 fi
 
-rm -f /tmp/neon_header.txt
+# Clean up
+rm -rf "$TEMP_DIR"
 
 echo "Fixed sse2neon.h with proper ARM NEON type definitions" 

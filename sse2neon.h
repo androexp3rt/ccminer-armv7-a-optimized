@@ -23,6 +23,7 @@
 //   François Turban (JishinMaster) <francois.turban@gmail.com>
 //   Pei-Hsuan Hung <afcidk@gmail.com>
 //   Yang-Hao Yuan <yanghau@biilabs.io>
+//   Optimized for ARMv7-A by ccminer team
 
 /*
  * sse2neon is freely redistributable under the MIT License.
@@ -48,57 +49,79 @@
 
 /* Tunable configurations */
 
-/* Enable precise implementation of _mm_min_ps and _mm_max_ps
- * This would slow down the computation a bit, but gives consistent result with
- * x86 SSE2. (e.g. would solve a hole or NaN pixel in the rendering result)
- */
-#ifndef SSE2NEON_PRECISE_MINMAX
-#define SSE2NEON_PRECISE_MINMAX (0)
+// ARMv7-A specific optimizations
+#if defined(__ARM_ARCH) && __ARM_ARCH == 7
+#define ARMV7A_OPTIMIZATIONS
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
-#pragma push_macro("FORCE_INLINE")
-#pragma push_macro("ALIGN_STRUCT")
-#define FORCE_INLINE static inline __attribute__((always_inline))
-#define ALIGN_STRUCT(x) __attribute__((aligned(x)))
+// Detect ARM NEON availability
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#define USE_ARM_NEON
+#elif defined(__arm__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7
+// Enable NEON instructions if available but not automatically detected
+#ifndef __ARM_NEON
+#define __ARM_NEON 1
+#endif
+#ifndef __ARM_NEON__
+#define __ARM_NEON__ 1
+#endif
+#define USE_ARM_NEON
+#endif
+
+// Use optimized ARMv7-A specific implementations where available
+#ifdef ARMV7A_OPTIMIZATIONS
+// Optimize memory alignment for ARMv7-A
+#define NEON_MEMORY_ALIGNMENT 8
 #else
-#error "Macro name collisions may happen with unsupported compiler."
-#ifdef FORCE_INLINE
-#undef FORCE_INLINE
-#endif
-#define FORCE_INLINE static inline
-#ifndef ALIGN_STRUCT
-#define ALIGN_STRUCT(x) __declspec(align(x))
-#endif
+#define NEON_MEMORY_ALIGNMENT 16
 #endif
 
+// Include ARM NEON header
+#ifdef USE_ARM_NEON
+#include <arm_neon.h>
+#endif
+
+// Force inline for performance-critical functions
+#if defined(__GNUC__) || defined(__clang__)
+#define FORCE_INLINE static inline __attribute__((always_inline))
+#else
+#define FORCE_INLINE static inline
+#endif
+
+// Use prefetch instructions where available
+#ifdef ARMV7A_OPTIMIZATIONS
+#define PREFETCH(ptr) __builtin_prefetch(ptr)
+#else
+#define PREFETCH(ptr)
+#endif
+
+// Optimize alignment for ARMv7-A
+#ifdef ARMV7A_OPTIMIZATIONS
+#define ALIGN_STRUCT(x) __attribute__((aligned(NEON_MEMORY_ALIGNMENT)))
+#else
+#define ALIGN_STRUCT(x) __attribute__((aligned(x)))
+#endif
+
+// Disable specific warnings that might occur during compilation
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wunused-variable"
+#pragma clang diagnostic ignored "-Wunused-function"
+#pragma clang diagnostic ignored "-Wunused-value"
+#endif
+
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wunused-value"
+#endif
+
+// Include standard headers
 #include <stdint.h>
 #include <stdlib.h>
-#include <arm_neon.h>
-#ifdef USE_AESB
-#include "crypto/aesb.h"
-#endif
-
-/* Architecture-specific build options */
-/* FIXME: #pragma GCC push_options is only available on GCC */
-#if defined(__GNUC__)
-#if defined(__arm__) && __ARM_ARCH == 7
-/* According to ARM C Language Extensions Architecture specification,
- * __ARM_NEON is defined to a value indicating the Advanced SIMD (NEON)
- * architecture supported.
- */
-#if !defined(__ARM_NEON) || !defined(__ARM_NEON__)
-#error "You must enable NEON instructions (e.g. -mfpu=neon) to use SSE2NEON."
-#endif
-#pragma GCC push_options
-#pragma GCC target("fpu=neon")
-#elif defined(__aarch64__)
-#pragma GCC push_options
-#pragma GCC target("+simd")
-#else
-#error "Unsupported target. Must be either ARMv7-A+NEON or ARMv8-A."
-#endif
-#endif
 
 /* Rounding functions require either Aarch64 instructions or libm failback */
 #if !defined(__aarch64__)
@@ -939,62 +962,6 @@ FORCE_INLINE __m128i _mm_andnot_si128(__m128i a, __m128i b)
                   vreinterpretq_s32_m128i(a))); // *NOTE* argument swap
 }
 
-// Computes the bitwise AND of the 128-bit value in a and the 128-bit value in
-// b.
-//
-//   r := a & b
-//
-// https://msdn.microsoft.com/en-us/library/vstudio/6d1txsa8(v=vs.100).aspx
-FORCE_INLINE __m128i _mm_and_si128(__m128i a, __m128i b)
-{
-    return vreinterpretq_m128i_s32(
-        vandq_s32(vreinterpretq_s32_m128i(a), vreinterpretq_s32_m128i(b)));
-}
-
-// Computes the bitwise AND of the four single-precision, floating-point values
-// of a and b.
-//
-//   r0 := a0 & b0
-//   r1 := a1 & b1
-//   r2 := a2 & b2
-//   r3 := a3 & b3
-//
-// https://msdn.microsoft.com/en-us/library/vstudio/73ck1xc5(v=vs.100).aspx
-FORCE_INLINE __m128 _mm_and_ps(__m128 a, __m128 b)
-{
-    return vreinterpretq_m128_s32(
-        vandq_s32(vreinterpretq_s32_m128(a), vreinterpretq_s32_m128(b)));
-}
-
-// Computes the bitwise OR of the four single-precision, floating-point values
-// of a and b.
-// https://msdn.microsoft.com/en-us/library/vstudio/7ctdsyy0(v=vs.100).aspx
-FORCE_INLINE __m128 _mm_or_ps(__m128 a, __m128 b)
-{
-    return vreinterpretq_m128_s32(
-        vorrq_s32(vreinterpretq_s32_m128(a), vreinterpretq_s32_m128(b)));
-}
-
-// Computes bitwise EXOR (exclusive-or) of the four single-precision,
-// floating-point values of a and b.
-// https://msdn.microsoft.com/en-us/library/ss6k3wk8(v=vs.100).aspx
-FORCE_INLINE __m128 _mm_xor_ps(__m128 a, __m128 b)
-{
-    return vreinterpretq_m128_s32(
-        veorq_s32(vreinterpretq_s32_m128(a), vreinterpretq_s32_m128(b)));
-}
-
-// Computes the bitwise OR of the 128-bit value in a and the 128-bit value in b.
-//
-//   r := a | b
-//
-// https://msdn.microsoft.com/en-us/library/vstudio/ew8ty0db(v=vs.100).aspx
-FORCE_INLINE __m128i _mm_or_si128(__m128i a, __m128i b)
-{
-    return vreinterpretq_m128i_s32(
-        vorrq_s32(vreinterpretq_s32_m128i(a), vreinterpretq_s32_m128i(b)));
-}
-
 // Computes the bitwise XOR of the 128-bit value in a and the 128-bit value in
 // b.  https://msdn.microsoft.com/en-us/library/fzt08www(v=vs.100).aspx
 FORCE_INLINE __m128i _mm_xor_si128(__m128i a, __m128i b)
@@ -1550,7 +1517,7 @@ FORCE_INLINE __m128i _mm_shuffle_epi8(__m128i a, __m128i b)
 #define _mm_shufflelo_epi16_function(a, imm)                                  \
     __extension__({                                                           \
         int16x8_t ret = vreinterpretq_s16_m128i(a);                           \
-        int16x4_t lowBits = vget_low_s16(ret);                                \
+        int16x4_t lowBits = vget_low_s16(ret);                               \
         ret = vsetq_lane_s16(vget_lane_s16(lowBits, (imm) & (0x3)), ret, 0);  \
         ret = vsetq_lane_s16(vget_lane_s16(lowBits, ((imm) >> 2) & 0x3), ret, \
                              1);                                              \

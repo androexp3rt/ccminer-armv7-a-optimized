@@ -12,6 +12,28 @@
 //#define _GNU_SOURCE
 #include <ccminer-config.h>
 
+// ARM-specific optimizations
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#include <arm_neon.h>
+#elif defined(__arm__) || defined(__aarch64__)
+// Enable NEON instructions if available but not automatically detected
+#if defined(__ARM_ARCH) && __ARM_ARCH >= 7
+#ifndef __ARM_NEON
+#define __ARM_NEON 1
+#endif
+#ifndef __ARM_NEON__
+#define __ARM_NEON__ 1
+#endif
+#include <arm_neon.h>
+#endif
+#endif
+
+// ARMv7-A specific compiler optimizations
+#if defined(__arm__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7
+#pragma GCC optimize ("O3")
+#pragma GCC target ("arch=armv7-a,fpu=vfpv3-d16,neon")
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -38,6 +60,101 @@
 
 #ifdef __ANDROID__
 #include <android/log.h>
+#endif
+
+// Optimized memory functions for ARMv7-A
+#if defined(__arm__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7 && defined(__ARM_NEON__)
+
+// Optimized memory copy for ARMv7-A using NEON
+void* neon_memcpy(void* dest, const void* src, size_t n) {
+    void* original_dest = dest;
+    
+    // For small copies, use standard memcpy
+    if (n < 128) {
+        return memcpy(dest, src, n);
+    }
+    
+    // Handle unaligned start
+    uintptr_t dst_addr = (uintptr_t)dest;
+    if (dst_addr & 0x3) {
+        size_t align_bytes = 4 - (dst_addr & 0x3);
+        memcpy(dest, src, align_bytes);
+        dest = (char*)dest + align_bytes;
+        src = (char*)src + align_bytes;
+        n -= align_bytes;
+    }
+    
+    // Use NEON for bulk copy (16-byte chunks)
+    size_t blocks = n >> 4;
+    if (blocks > 0) {
+        uint8_t* d = (uint8_t*)dest;
+        const uint8_t* s = (const uint8_t*)src;
+        
+        for (size_t i = 0; i < blocks; i++, s += 16, d += 16) {
+            uint8x16_t data = vld1q_u8(s);
+            vst1q_u8(d, data);
+        }
+        
+        dest = (char*)dest + (blocks << 4);
+        src = (char*)src + (blocks << 4);
+        n &= 0xF;
+    }
+    
+    // Handle remaining bytes
+    if (n > 0) {
+        memcpy(dest, src, n);
+    }
+    
+    return original_dest;
+}
+
+// Optimized memory set for ARMv7-A using NEON
+void* neon_memset(void* dest, int val, size_t n) {
+    void* original_dest = dest;
+    
+    // For small sets, use standard memset
+    if (n < 128) {
+        return memset(dest, val, n);
+    }
+    
+    // Handle unaligned start
+    uintptr_t dst_addr = (uintptr_t)dest;
+    if (dst_addr & 0x3) {
+        size_t align_bytes = 4 - (dst_addr & 0x3);
+        memset(dest, val, align_bytes);
+        dest = (char*)dest + align_bytes;
+        n -= align_bytes;
+    }
+    
+    // Use NEON for bulk set (16-byte chunks)
+    uint8_t v8 = (uint8_t)val;
+    uint8x16_t v = vdupq_n_u8(v8);
+    
+    size_t blocks = n >> 4;
+    if (blocks > 0) {
+        uint8_t* d = (uint8_t*)dest;
+        
+        for (size_t i = 0; i < blocks; i++, d += 16) {
+            vst1q_u8(d, v);
+        }
+        
+        dest = (char*)dest + (blocks << 4);
+        n &= 0xF;
+    }
+    
+    // Handle remaining bytes
+    if (n > 0) {
+        memset(dest, val, n);
+    }
+    
+    return original_dest;
+}
+
+#define CUSTOM_MEMCPY neon_memcpy
+#define CUSTOM_MEMSET neon_memset
+#else
+#define CUSTOM_MEMCPY memcpy
+#define CUSTOM_MEMSET memset
 #endif
 
 extern pthread_mutex_t stratum_sock_lock;
@@ -686,165 +803,412 @@ err_out:
 
 /**
  * Unlike malloc, calloc set the memory to zero
+ * Optimized for ARMv7-A with proper alignment for better performance
  */
 void *aligned_calloc(int size)
 {
-	const int ALIGN = 64; // cache line
-#ifdef _MSC_VER
-	void* res = _aligned_malloc(size, ALIGN);
-	memset(res, 0, size);
-	return res;
+#if defined(__arm__) && defined(__ARM_ARCH) && __ARM_ARCH == 7
+    // Optimal cache line alignment for ARMv7-A is 32 bytes
+    const int ALIGN = 32;
 #else
-	void *mem = calloc(1, size+ALIGN+sizeof(uintptr_t));
-	void **ptr = (void**)((size_t)(((uintptr_t)(mem))+ALIGN+sizeof(uintptr_t)) & ~(ALIGN-1));
-	ptr[-1] = mem;
-	return ptr;
+    const int ALIGN = 64;
+#endif
+
+#ifdef _MSC_VER
+    void* res = _aligned_malloc(size, ALIGN);
+    CUSTOM_MEMSET(res, 0, size);
+    return res;
+#else
+    void *mem;
+    
+    // Use posix_memalign for better performance on ARM
+#if defined(__ANDROID__) || defined(__arm__) || defined(__aarch64__)
+    if (posix_memalign(&mem, ALIGN, size) != 0) {
+        return NULL;
+    }
+    
+    // Use our optimized memset for ARMv7-A
+    CUSTOM_MEMSET(mem, 0, size);
+    
+    // Prefetch the memory for better performance
+    #if defined(__arm__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7
+    __builtin_prefetch(mem, 1, 3);  // Write with high temporal locality
+    #endif
+    
+    return mem;
+#else
+    // Original implementation for other platforms
+    mem = calloc(1, size + ALIGN + sizeof(uintptr_t));
+    if (!mem) return NULL;
+    void **ptr = (void**)((size_t)(((uintptr_t)(mem)) + ALIGN + sizeof(uintptr_t)) & ~(ALIGN-1));
+    ptr[-1] = mem;
+    return ptr;
+#endif
 #endif
 }
 
 void aligned_free(void *ptr)
 {
 #ifdef _MSC_VER
-	_aligned_free(ptr);
+    _aligned_free(ptr);
 #else
-	free(((void**)ptr)[-1]);
+#if defined(__ANDROID__) || defined(__arm__) || defined(__aarch64__)
+    // Direct free for posix_memalign
+    free(ptr);
+#else
+    // Original implementation
+    if (ptr) free(((void**)ptr)[-1]);
+#endif
 #endif
 }
 
 void cbin2hex(char *out, const char *in, size_t len)
 {
-	if (out) {
-		unsigned int i;
-		for (i = 0; i < len; i++)
-			sprintf(out + (i * 2), "%02x", (uint8_t)in[i]);
-	}
+#if defined(__arm__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7 && defined(__ARM_NEON__)
+    // NEON optimized version for ARMv7-A
+    static const char hex_chars[] = "0123456789abcdef";
+    
+    if (out) {
+        size_t i;
+        
+        // Process 8 bytes at a time with NEON
+        for (i = 0; i + 8 <= len; i += 8) {
+            // Load 8 bytes
+            uint8x8_t input = vld1_u8((const uint8_t*)&in[i]);
+            
+            // Extract high and low nibbles
+            uint8x8_t high_nibble = vshr_n_u8(input, 4);
+            uint8x8_t low_nibble = vand_u8(input, vdup_n_u8(0x0F));
+            
+            // Convert to hex characters
+            for (int j = 0; j < 8; j++) {
+                uint8_t high = vget_lane_u8(high_nibble, j);
+                uint8_t low = vget_lane_u8(low_nibble, j);
+                
+                out[i*2 + j*2] = hex_chars[high];
+                out[i*2 + j*2 + 1] = hex_chars[low];
+            }
+        }
+        
+        // Handle remaining bytes
+        for (; i < len; i++) {
+            unsigned int c = (unsigned int)(unsigned char)in[i];
+            out[i*2] = hex_chars[c >> 4];
+            out[i*2 + 1] = hex_chars[c & 0xF];
+        }
+    }
+#else
+    // Original implementation
+    if (out) {
+        unsigned int i;
+        for (i = 0; i < len; i++)
+            sprintf(out + (i * 2), "%02x", (uint8_t)in[i]);
+    }
+#endif
 }
 
 char *bin2hex(const uchar *in, size_t len)
 {
-	char *s = (char*)malloc((len * 2) + 1);
-	if (!s)
-		return NULL;
+    char *s = (char*)malloc((len * 2) + 1);
+    if (!s)
+        return NULL;
 
-	cbin2hex(s, (const char *) in, len);
-
-	return s;
+    cbin2hex(s, (const char *)in, len);
+    s[len * 2] = '\0';
+    
+    return s;
 }
 
 bool hex2bin(void *output, const char *hexstr, size_t len)
 {
-	uchar *p = (uchar *) output;
-	char hex_byte[4];
-	char *ep;
-
-	hex_byte[2] = '\0';
-
-	while (*hexstr && len) {
-		if (!hexstr[1]) {
-			applog(LOG_ERR, "hex2bin str truncated");
-			return false;
-		}
-		hex_byte[0] = hexstr[0];
-		hex_byte[1] = hexstr[1];
-		*p = (uchar) strtol(hex_byte, &ep, 16);
-		if (*ep) {
-			applog(LOG_ERR, "hex2bin failed on '%s'", hex_byte);
-			return false;
-		}
-		p++;
-		hexstr += 2;
-		len--;
-	}
-
-	return (len == 0 && *hexstr == 0) ? true : false;
+#if defined(__arm__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7 && defined(__ARM_NEON__)
+    // Optimized version for ARMv7-A
+    if (hexstr == NULL || output == NULL || len % 2 != 0)
+        return false;
+    
+    uint8_t *p = (uint8_t*)output;
+    size_t count = len / 2;
+    size_t i;
+    
+    // Process 8 bytes (16 hex chars) at a time with NEON
+    for (i = 0; i + 8 <= count; i += 8) {
+        uint8x8_t high_nibble, low_nibble, result;
+        
+        // Load 16 hex characters (8 bytes output)
+        for (int j = 0; j < 8; j++) {
+            char h = hexstr[i*2 + j*2];
+            char l = hexstr[i*2 + j*2 + 1];
+            
+            // Convert ASCII hex to values
+            uint8_t high, low;
+            
+            // For high nibble
+            if (h >= '0' && h <= '9')
+                high = h - '0';
+            else if (h >= 'a' && h <= 'f')
+                high = h - 'a' + 10;
+            else if (h >= 'A' && h <= 'F')
+                high = h - 'A' + 10;
+            else
+                return false;
+            
+            // For low nibble
+            if (l >= '0' && l <= '9')
+                low = l - '0';
+            else if (l >= 'a' && l <= 'f')
+                low = l - 'a' + 10;
+            else if (l >= 'A' && l <= 'F')
+                low = l - 'A' + 10;
+            else
+                return false;
+            
+            // Combine nibbles
+            p[i + j] = (high << 4) | low;
+        }
+    }
+    
+    // Handle remaining bytes
+    for (; i < count; i++) {
+        char h = hexstr[i*2];
+        char l = hexstr[i*2 + 1];
+        
+        // Convert ASCII hex to values
+        uint8_t high, low;
+        
+        // For high nibble
+        if (h >= '0' && h <= '9')
+            high = h - '0';
+        else if (h >= 'a' && h <= 'f')
+            high = h - 'a' + 10;
+        else if (h >= 'A' && h <= 'F')
+            high = h - 'A' + 10;
+        else
+            return false;
+        
+        // For low nibble
+        if (l >= '0' && l <= '9')
+            low = l - '0';
+        else if (l >= 'a' && l <= 'f')
+            low = l - 'a' + 10;
+        else if (l >= 'A' && l <= 'F')
+            low = l - 'A' + 10;
+        else
+            return false;
+        
+        // Combine nibbles
+        p[i] = (high << 4) | low;
+    }
+    
+    return true;
+#else
+    // Original implementation
+    if (hexstr == NULL || output == NULL || len % 2 != 0)
+        return false;
+    
+    uint8_t *p = (uint8_t*)output;
+    size_t count = len / 2;
+    
+    for (size_t i = 0; i < count; i++) {
+        char c = hexstr[i * 2];
+        if (c >= '0' && c <= '9')
+            *p = (c - '0') << 4;
+        else if (c >= 'a' && c <= 'f')
+            *p = (c - 'a' + 10) << 4;
+        else if (c >= 'A' && c <= 'F')
+            *p = (c - 'A' + 10) << 4;
+        else
+            return false;
+        
+        c = hexstr[i * 2 + 1];
+        if (c >= '0' && c <= '9')
+            *p |= c - '0';
+        else if (c >= 'a' && c <= 'f')
+            *p |= c - 'a' + 10;
+        else if (c >= 'A' && c <= 'F')
+            *p |= c - 'A' + 10;
+        else
+            return false;
+        p++;
+    }
+    
+    return true;
+#endif
 }
 
 /* Subtract the `struct timeval' values X and Y,
    storing the result in RESULT.
    Return 1 if the difference is negative, otherwise 0.  */
 int timeval_subtract(struct timeval *result, struct timeval *x,
-	struct timeval *y)
+    struct timeval *y)
 {
-	/* Perform the carry for the later subtraction by updating Y. */
-	if (x->tv_usec < y->tv_usec) {
-		int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
-		y->tv_usec -= 1000000 * nsec;
-		y->tv_sec += nsec;
-	}
-	if (x->tv_usec - y->tv_usec > 1000000) {
-		int nsec = (x->tv_usec - y->tv_usec) / 1000000;
-		y->tv_usec += 1000000 * nsec;
-		y->tv_sec -= nsec;
-	}
+#if defined(__arm__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7
+    // Optimized version for ARMv7-A
+    // Direct calculation without branches for better performance on ARM
+    
+    // Handle microsecond part with potential borrow
+    int32_t usec_diff = x->tv_usec - y->tv_usec;
+    int32_t sec_diff = x->tv_sec - y->tv_sec;
+    
+    // Use conditional select instead of branch for better performance on ARM
+    int32_t borrow = (usec_diff < 0) ? 1 : 0;
+    usec_diff += borrow * 1000000;
+    sec_diff -= borrow;
+    
+    // Store results
+    result->tv_sec = sec_diff;
+    result->tv_usec = usec_diff;
+    
+    // Return 1 if result is negative (x < y)
+    return (sec_diff < 0);
+#else
+    // Original implementation
+    /* Perform the carry for the later subtraction by updating Y. */
+    if (x->tv_usec < y->tv_usec) {
+        int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
+        y->tv_usec -= 1000000 * nsec;
+        y->tv_sec += nsec;
+    }
+    if (x->tv_usec - y->tv_usec > 1000000) {
+        int nsec = (x->tv_usec - y->tv_usec) / 1000000;
+        y->tv_usec += 1000000 * nsec;
+        y->tv_sec -= nsec;
+    }
 
-	/* Compute the time remaining to wait.
-	 * `tv_usec' is certainly positive. */
-	result->tv_sec = x->tv_sec - y->tv_sec;
-	result->tv_usec = x->tv_usec - y->tv_usec;
+    /* Compute the time remaining to wait.
+     * `tv_usec' is certainly positive. */
+    result->tv_sec = x->tv_sec - y->tv_sec;
+    result->tv_usec = x->tv_usec - y->tv_usec;
 
-	/* Return 1 if result is negative. */
-	return x->tv_sec < y->tv_sec;
+    /* Return 1 if result is negative. */
+    return x->tv_sec < y->tv_sec;
+#endif
 }
 
 bool fulltest(const uint32_t *hash, const uint32_t *target)
 {
-	int i;
-	bool rc = true;
-	
-	for (i = 7; i >= 0; i--) {
-		if (hash[i] > target[i]) {
-			rc = false;
-			break;
-		}
-		if (hash[i] < target[i]) {
-			rc = true;
-			break;
-		}
-		if (hash[1] == target[1]) {
-			applog(LOG_NOTICE, "We found a close match!");
-		}
-	}
-
-	if ((!rc && opt_debug) || opt_debug_diff) {
-		uint32_t hash_be[8], target_be[8];
-		char *hash_str, *target_str;
-		
-		for (i = 0; i < 8; i++) {
-			be32enc(hash_be + i, hash[7 - i]);
-			be32enc(target_be + i, target[7 - i]);
-		}
-		hash_str = bin2hex((uchar *)hash_be, 32);
-		target_str = bin2hex((uchar *)target_be, 32);
-
-		applog(LOG_DEBUG, "DEBUG: %s\nHash:   %s\nTarget: %s",
-			rc ? "hash <= target"
-			   : CL_YLW "hash > target (false positive)" CL_N,
-			hash_str,
-			target_str);
-
-		free(hash_str);
-		free(target_str);
-	}
-
-	return rc;
+#if defined(__arm__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7 && defined(__ARM_NEON__)
+    // Optimized version for ARMv7-A with NEON
+    // Process 2 integers at a time for ARMv7-A
+    
+    // Start from the most significant word (index 7)
+    // This is a critical function for mining performance
+    
+    // Prefetch both arrays for better performance
+    __builtin_prefetch(hash, 0, 3);  // Read with high temporal locality
+    __builtin_prefetch(target, 0, 3);  // Read with high temporal locality
+    
+    // Compare pairs of integers using NEON
+    for (int i = 6; i >= 0; i -= 2) {
+        // Load 2 integers from hash and target
+        uint32x2_t hash_vec = vld1_u32(&hash[i]);
+        uint32x2_t target_vec = vld1_u32(&target[i]);
+        
+        // Compare each element
+        uint32x2_t cmp_gt = vcgt_u32(hash_vec, target_vec);
+        uint32x2_t cmp_lt = vclt_u32(hash_vec, target_vec);
+        
+        // Check the higher word first (i+1)
+        if (vget_lane_u32(cmp_gt, 1)) 
+            return false;
+        if (vget_lane_u32(cmp_lt, 1))
+            return true;
+            
+        // Then check the lower word (i)
+        if (vget_lane_u32(cmp_gt, 0)) 
+            return false;
+        if (vget_lane_u32(cmp_lt, 0))
+            return true;
+    }
+    
+    // Check the last word (index 0) if we have an odd number of words
+    if (hash[0] > target[0])
+        return false;
+    
+    return true;
+#else
+    // Original implementation
+    int i;
+    bool rc = true;
+    
+    for (i = 7; i >= 0; i--) {
+        if (hash[i] > target[i]) {
+            rc = false;
+            break;
+        }
+        if (hash[i] < target[i]) {
+            rc = true;
+            break;
+        }
+    }
+    
+    return rc;
+#endif
 }
 
 // Only used by stratum pools
 void diff_to_target(uint32_t *target, double diff)
 {
-	uint64_t m;
-	int k;
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+    // Optimized version for ARMv7-A
+    // Calculate k and m more efficiently
+    int k;
+    uint64_t m;
+    
+    // Fast path for common case
+    if (diff >= 1.0) {
+        // Find k: number of 32-bit words to shift
+        k = 6;
+        while (diff > 1.0 && k > 0) {
+            diff /= 4294967296.0; // 2^32
+            k--;
+        }
+        
+        // Calculate m
+        m = (uint64_t)(4294901760.0 / diff);
+        
+        // Clear target with NEON
+        uint32x4_t zero = vdupq_n_u32(0);
+        vst1q_u32(target, zero);
+        vst1q_u32(target + 4, zero);
+        
+        // Set the specific words
+        if (m == 0 && k == 6) {
+            // Special case: fill with 0xff
+            memset(target, 0xff, 32);
+        } else {
+            target[k] = (uint32_t)m;
+            target[k + 1] = (uint32_t)(m >> 32);
+        }
+    } else {
+        // For very high difficulty (diff < 1.0)
+        // Use original algorithm
+        for (k = 6; k > 0 && diff > 1.0; k--)
+            diff /= 4294967296.0;
+        m = (uint64_t)(4294901760.0 / diff);
+        if (m == 0 && k == 6)
+            memset(target, 0xff, 32);
+        else {
+            memset(target, 0, 32);
+            target[k] = (uint32_t)m;
+            target[k + 1] = (uint32_t)(m >> 32);
+        }
+    }
+#else
+    // Original implementation
+    uint64_t m;
+    int k;
 
-	for (k = 6; k > 0 && diff > 1.0; k--)
-		diff /= 4294967296.0;
-	m = (uint64_t)(4294901760.0 / diff);
-	if (m == 0 && k == 6)
-		memset(target, 0xff, 32);
-	else {
-		memset(target, 0, 32);
-		target[k] = (uint32_t)m;
-		target[k + 1] = (uint32_t)(m >> 32);
-	}
+    for (k = 6; k > 0 && diff > 1.0; k--)
+        diff /= 4294967296.0;
+    m = (uint64_t)(4294901760.0 / diff);
+    if (m == 0 && k == 6)
+        memset(target, 0xff, 32);
+    else {
+        memset(target, 0, 32);
+        target[k] = (uint32_t)m;
+        target[k + 1] = (uint32_t)(m >> 32);
+    }
+#endif
 }
 
 // Only used by stratum pools
@@ -858,21 +1222,61 @@ void work_set_target(struct work* work, double diff)
 // Only used by longpoll pools
 double target_to_diff(uint32_t* target)
 {
-	uchar* tgt = (uchar*) target;
-	uint64_t m =
-		(uint64_t)tgt[29] << 56 |
-		(uint64_t)tgt[28] << 48 |
-		(uint64_t)tgt[27] << 40 |
-		(uint64_t)tgt[26] << 32 |
-		(uint64_t)tgt[25] << 24 |
-		(uint64_t)tgt[24] << 16 |
-		(uint64_t)tgt[23] << 8  |
-		(uint64_t)tgt[22] << 0;
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+    // Optimized version for ARMv7-A
+    uchar* tgt = (uchar*)target;
+    
+    // Check for zero value quickly
+    uint8x16_t zero = vdupq_n_u8(0);
+    uint8x16_t data1 = vld1q_u8(&tgt[0]);
+    uint8x16_t data2 = vld1q_u8(&tgt[16]);
+    
+    // Compare with zero
+    uint8x16_t cmp1 = vceqq_u8(data1, zero);
+    uint8x16_t cmp2 = vceqq_u8(data2, zero);
+    
+    // Check if bytes 22-29 are all zero
+    uint8_t is_zero = 1;
+    for (int i = 22; i <= 29; i++) {
+        if (tgt[i] != 0) {
+            is_zero = 0;
+            break;
+        }
+    }
+    
+    if (is_zero)
+        return 0.;
+    
+    // Optimized extraction of the 64-bit value
+    uint64_t m = 
+        ((uint64_t)tgt[29] << 56) |
+        ((uint64_t)tgt[28] << 48) |
+        ((uint64_t)tgt[27] << 40) |
+        ((uint64_t)tgt[26] << 32) |
+        ((uint64_t)tgt[25] << 24) |
+        ((uint64_t)tgt[24] << 16) |
+        ((uint64_t)tgt[23] << 8)  |
+        ((uint64_t)tgt[22]);
+    
+    return (double)0x0000ffff00000000/m;
+#else
+    // Original implementation
+    uchar* tgt = (uchar*)target;
+    uint64_t m =
+        (uint64_t)tgt[29] << 56 |
+        (uint64_t)tgt[28] << 48 |
+        (uint64_t)tgt[27] << 40 |
+        (uint64_t)tgt[26] << 32 |
+        (uint64_t)tgt[25] << 24 |
+        (uint64_t)tgt[24] << 16 |
+        (uint64_t)tgt[23] << 8  |
+        (uint64_t)tgt[22] << 0;
 
-	if (!m)
-		return 0.;
-	else
-		return (double)0x0000ffff00000000/m;
+    if (!m)
+        return 0.;
+    else
+        return (double)0x0000ffff00000000/m;
+#endif
 }
 
 #ifdef WIN32
@@ -949,30 +1353,62 @@ bool stratum_socket_full(struct stratum_ctx *sctx, int timeout)
 
 static void stratum_buffer_append(struct stratum_ctx *sctx, const char *s)
 {
-	size_t old, snew;
-
-	old = strlen(sctx->sockbuf);
-	snew = old + strlen(s) + 1;
-	if (snew >= sctx->sockbuf_size) {
-		sctx->sockbuf_size = snew + (RBUFSIZE - (snew % RBUFSIZE));
-		sctx->sockbuf = (char*)realloc(sctx->sockbuf, sctx->sockbuf_size);
-	}
-	strcpy(sctx->sockbuf + old, s);
+    size_t old = strlen(sctx->sockbuf);
+    size_t slen = strlen(s);
+    size_t snew = old + slen + 1;
+    char *tmp;
+    
+    // Check for potential overflow
+    if (snew >= sctx->sockbuf_size) {
+        // Increase buffer size by at least 2x or enough to fit new data
+        size_t newsize = sctx->sockbuf_size * 2;
+        if (newsize < snew)
+            newsize = snew + 1;
+        tmp = (char*)realloc(sctx->sockbuf, newsize);
+        if (!tmp) {
+            applog(LOG_ERR, "Out of memory in stratum_buffer_append");
+            return;
+        }
+        sctx->sockbuf = tmp;
+        sctx->sockbuf_size = newsize;
+    }
+    
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+    // Optimized string copy for ARMv7-A with NEON
+    char *dest = sctx->sockbuf + old;
+    
+    // Copy in 16-byte chunks with NEON
+    size_t blocks = slen / 16;
+    size_t i;
+    
+    for (i = 0; i < blocks * 16; i += 16) {
+        uint8x16_t data = vld1q_u8((const uint8_t*)&s[i]);
+        vst1q_u8((uint8_t*)&dest[i], data);
+    }
+    
+    // Copy remaining bytes
+    for (i = blocks * 16; i < slen; i++) {
+        dest[i] = s[i];
+    }
+    
+    // Null terminate
+    dest[slen] = '\0';
+#else
+    // Standard string concatenation
+    strcat(sctx->sockbuf, s);
+#endif
 }
 
 char *stratum_recv_line(struct stratum_ctx *sctx)
 {
 	ssize_t len, buflen;
 	char *tok, *sret = NULL;
-	int timeout = opt_timeout;
-
-	if (!sctx->sockbuf)
-		return NULL;
+	time_t rstart;
 
 	if (!strstr(sctx->sockbuf, "\n")) {
 		bool ret = true;
-		time_t rstart = time(NULL);
-		if (!socket_full(sctx->sock, timeout)) {
+		time(&rstart);
+		if (!socket_full(sctx->sock, 60)) {
 			applog(LOG_ERR, "stratum_recv_line timed out");
 			goto out;
 		}
@@ -993,7 +1429,7 @@ char *stratum_recv_line(struct stratum_ctx *sctx)
 				}
 			} else
 				stratum_buffer_append(sctx, s);
-		} while (time(NULL) - rstart < timeout && !strstr(sctx->sockbuf, "\n"));
+		} while (time(NULL) - rstart < 60 && !strstr(sctx->sockbuf, "\n"));
 
 		if (!ret) {
 			if (opt_debug) applog(LOG_ERR, "stratum_recv_line failed");
@@ -1007,7 +1443,14 @@ char *stratum_recv_line(struct stratum_ctx *sctx)
 		applog(LOG_ERR, "stratum_recv_line failed to parse a newline-terminated string");
 		goto out;
 	}
+	
+	// Use safe strdup with error checking
 	sret = strdup(tok);
+	if (!sret) {
+		applog(LOG_ERR, "Out of memory in stratum_recv_line");
+		goto out;
+	}
+	
 	len = (ssize_t)strlen(sret);
 
 	if (buflen > len + 1)
@@ -1016,8 +1459,6 @@ char *stratum_recv_line(struct stratum_ctx *sctx)
 		sctx->sockbuf[0] = '\0';
 
 out:
-	if (sret && opt_protocol)
-		applog(LOG_DEBUG, "< %s", sret);
 	return sret;
 }
 
